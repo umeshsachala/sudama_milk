@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Home_screen.dart';
+import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -14,17 +14,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, String>> onboardingData = [
     {
-      "image": "assets/images/storeimage.png",
+      "image": "assets/images/Logo.png",
       "title": "Welcome to Sudama Milk",
       "desc": "Your digital partner for dairy management."
     },
     {
-      "image": "assets/images/storeimage.png",
+      "image": "assets/images/Logo.png",
       "title": "Track Orders Easily",
       "desc": "Record daily orders and monitor deliveries."
     },
     {
-      "image": "assets/images/storeimage.png",
+      "image": "assets/images/Logo.png",
       "title": "Manage Stock Smartly",
       "desc": "Keep full control over your milk & product stock."
     },

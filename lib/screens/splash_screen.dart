@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:sudama_milk/screens/onboarding_screen.dart';
 
-class FlashScreen extends StatefulWidget {
-  const FlashScreen({super.key});
+class splash extends StatefulWidget {
+  const splash({super.key});
 
   @override
-  State<FlashScreen> createState() => _FlashScreenState();
+  State<splash> createState() => _splashState();
 }
 
-class _FlashScreenState extends State<FlashScreen>
+class _splashState extends State<splash>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fade;
@@ -77,7 +77,7 @@ class _FlashScreenState extends State<FlashScreen>
                     ],
                   ),
                   child: Image.asset(
-                    "assets/images/storeimage.png",
+                    "assets/images/Logo.png",
                     width: 300,
                   ),
                 ),
