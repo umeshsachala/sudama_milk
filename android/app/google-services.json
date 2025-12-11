@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "100185279816",
+    "project_id": "sudama-milk",
+    "storage_bucket": "sudama-milk.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:100185279816:android:c383a1097e7dd7ad64b77d",
+        "android_client_info": {
+          "package_name": "com.example.sudama_milk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "100185279816-kuuk6caqbd3uv68i18d3jctgij981nuu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sudama_milk",
+            "certificate_hash": "f9609a53232e8d64b179b8d2aae05bc6138c4f4c"
+          }
+        },
+        {
+          "client_id": "100185279816-4h8akeluvph08vnjm2aduo9gjqmviaj8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1FFJcDhJ8-PeXzf8dkbvO0rYgdbYgDek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "100185279816-4h8akeluvph08vnjm2aduo9gjqmviaj8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

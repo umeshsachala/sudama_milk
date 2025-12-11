@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'item_management/add_item_screen.dart';
 import 'item_management/stock_in_screen.dart';
 import 'item_management/stock_out_screen.dart';
@@ -14,15 +14,12 @@ class Homescreen extends StatefulWidget {
 
 class _HomescreenState extends State<Homescreen> {
   List<Map<String, dynamic>> products = [];
-  // product = {name, stock, updatedAt}
 
   void refresh() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
-
     int totalItems = products.length;
-
     int totalStock = products.fold<int>(
       0,
           (sum, item) => sum + (item["stock"] as int? ?? 0),
@@ -32,16 +29,13 @@ class _HomescreenState extends State<Homescreen> {
       appBar: AppBar(
         title: const Text("Sudama Milk"),
         centerTitle: true,
-        backgroundColor: const Color(0xFF6A11CB),
+        backgroundColor: Colors.deepPurple.shade50,
       ),
 
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
         child: Column(
           children: [
-            // ============================
-            // Summary Section
-            // ============================
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
@@ -75,9 +69,6 @@ class _HomescreenState extends State<Homescreen> {
 
             const SizedBox(height: 20),
 
-            // ============================
-            // Product List
-            // ============================
             Expanded(
               child: products.isEmpty
                   ? const Center(
@@ -90,12 +81,8 @@ class _HomescreenState extends State<Homescreen> {
                 itemCount: products.length,
                 itemBuilder: (context, i) {
                   final item = products[i];
-
                   DateTime updated = item["updatedAt"] ?? DateTime.now();
 
-                  // -------------------------
-                  // Format Time with AM/PM
-                  // -------------------------
                   String hour =
                   (updated.hour % 12 == 0 ? 12 : updated.hour % 12)
                       .toString()
@@ -109,8 +96,7 @@ class _HomescreenState extends State<Homescreen> {
                       title: Text(item["name"]),
                       subtitle: Text(
                         "Stock: ${item["stock"]}\n"
-                            "Last update: $hour:$minute $period  "
-                            "${updated.day}/${updated.month}/${updated.year}",
+                            "Last update: $hour:$minute $period  ${updated.day}/${updated.month}/${updated.year}",
                       ),
                     ),
                   );
@@ -121,99 +107,83 @@ class _HomescreenState extends State<Homescreen> {
         ),
       ),
 
-      // ============================
-      // Bottom Buttons Section
-      // ============================
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 5,
-                spreadRadius: 1)
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            buildBottomButton(
-              icon: Icons.add_circle,
-              label: "Add Item",
-              color: Colors.green,
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => AddItemScreen(products, refresh)),
-                );
-              },
+      // -------------------------
+      // FLOATING CENTER BUTTON
+      // -------------------------
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.deepPurple,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddItemScreen(products, refresh),
             ),
-            buildBottomButton(
-              icon: Icons.upload,
-              label: "Stock In",
-              color: Colors.blue,
-              onTap: () async {
-                if (products.isEmpty) {
-                  showError("Please add an item first.");
-                  return;
-                }
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => StockInScreen(products, refresh)),
-                );
-              },
-            ),
-            buildBottomButton(
-              icon: Icons.download,
-              label: "Stock Out",
-              color: Colors.red,
-              onTap: () async {
-                if (products.isEmpty) {
-                  showError("Please add an item first.");
-                  return;
-                }
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => StockOutScreen(products, refresh)),
-                );
-              },
-            ),
-          ],
-        ),
+          );
+        },
+        child: const Icon(Icons.add, size: 32, color: Colors.white),
       ),
-    );
-  }
 
-  // Bottom buttons (small round)
-  Widget buildBottomButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // -------------------------------------
+      // BOTTOM BAR WITH STOCK IN / STOCK OUT
+      // -------------------------------------
+      bottomNavigationBar: Container(
+        height: 100,
+       // color: Colors.deepPurple.shade50,
+        padding: const EdgeInsets.symmetric(horizontal: 25),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // STOCK IN
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+              ),
+              onPressed: () {
+                if (products.isEmpty) {
+                  showError("Please add an item first.");
+                  return;
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => StockInScreen(products, refresh),
+                  ),
+                );
+              },
+              child: const Text(
+                "Stock In",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
-          ),
-          const SizedBox(height: 5),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600))
-        ],
+
+            // STOCK OUT
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+              ),
+              onPressed: () {
+                if (products.isEmpty) {
+                  showError("Please add an item first.");
+                  return;
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => StockOutScreen(products, refresh),
+                  ),
+                );
+              },
+              child: const Text(
+                "Stock Out",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
