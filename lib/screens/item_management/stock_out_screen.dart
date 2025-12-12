@@ -91,8 +91,10 @@ class StockOutScreen extends StatefulWidget {
 }
 
 class _StockOutScreenState extends State<StockOutScreen> {
-  final CollectionReference itemsRef = FirebaseFirestore.instance.collection('items');
-  final CollectionReference txRef = FirebaseFirestore.instance.collection('stock_transactions');
+  final CollectionReference itemsRef =
+  FirebaseFirestore.instance.collection('items');
+  final CollectionReference txRef =
+  FirebaseFirestore.instance.collection('stock_transactions');
 
   String? _selectedId;
   String? _selectedName;
@@ -101,12 +103,15 @@ class _StockOutScreenState extends State<StockOutScreen> {
 
   Future<void> _submit() async {
     if (_selectedId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Select item')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Select item')));
       return;
     }
+
     final qty = int.tryParse(_qtyCtrl.text) ?? 0;
     if (qty <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter valid qty')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Enter valid qty')));
       return;
     }
 
@@ -117,14 +122,21 @@ class _StockOutScreenState extends State<StockOutScreen> {
     try {
       final snap = await docRef.get();
       final current = (snap.data() as Map<String, dynamic>)['stock'] ?? 0;
-      final currentInt = (current is int) ? current : int.tryParse(current.toString()) ?? 0;
+      final currentInt =
+      (current is int) ? current : int.tryParse(current.toString()) ?? 0;
+
       if (currentInt < qty) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insufficient stock')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Insufficient stock')));
         setState(() => _isLoading = false);
         return;
       }
 
-      await docRef.update({'stock': FieldValue.increment(-qty), 'updatedAt': FieldValue.serverTimestamp()});
+      await docRef.update({
+        'stock': FieldValue.increment(-qty),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
       await txRef.add({
         'itemId': _selectedId,
         'itemName': _selectedName ?? '',
@@ -133,62 +145,118 @@ class _StockOutScreenState extends State<StockOutScreen> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock removed')));
-        Navigator.pop(context);
-      }
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Stock removed')));
+      Navigator.pop(context);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _qtyCtrl.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Stock Out')),
+      appBar: AppBar(
+        title: const Text("Stock Out"),
+        backgroundColor: Colors.deepPurple,
+      ),
+
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ITEM DROPDOWN (MATCHING DESIGN)
             StreamBuilder<QuerySnapshot>(
               stream: itemsRef.orderBy('name').snapshots(),
               builder: (context, snap) {
-                if (!snap.hasData) return const CircularProgressIndicator();
+                if (!snap.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
                 final docs = snap.data!.docs;
-                return DropdownButtonFormField<String>(
-                  value: _selectedId,
-                  items: docs.map((d) {
-                    final data = d.data() as Map<String, dynamic>;
-                    return DropdownMenuItem(value: d.id, child: Text('${data['name']} (Stock: ${data['stock'] ?? 0})'));
-                  }).toList(),
-                  onChanged: (v) {
-                    final sel = docs.firstWhere((e) => e.id == v);
-                    final data = sel.data() as Map<String, dynamic>;
-                    setState(() {
-                      _selectedId = v;
-                      _selectedName = data['name'];
-                    });
-                  },
-                  decoration: const InputDecoration(labelText: 'Select item'),
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedId,
+                      hint: const Text("Select Item"),
+                      items: docs.map((d) {
+                        final data = d.data() as Map<String, dynamic>;
+                        return DropdownMenuItem(
+                          value: d.id,
+                          child: Text(
+                              "${data['name']} (Stock: ${data['stock'] ?? 0})"),
+                        );
+                      }).toList(),
+                      onChanged: (v) {
+                        final sel = docs.firstWhere((e) => e.id == v);
+                        final data = sel.data() as Map<String, dynamic>;
+
+                        setState(() {
+                          _selectedId = v;
+                          _selectedName = data['name'];
+                        });
+                      },
+                    ),
+                  ),
                 );
               },
             ),
-            const SizedBox(height: 12),
-            TextFormField(controller: _qtyCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Quantity to remove')),
-            const SizedBox(height: 20),
-            _isLoading ? const CircularProgressIndicator() : ElevatedButton(onPressed: _submit, child: const Text('Remove Stock')),
+
+            const SizedBox(height: 16),
+
+            // QTY FIELD (NO OUTLINE)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                controller: _qtyCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  hintText: "Enter Quantity",
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            // REMOVE BUTTON
+            SizedBox(
+              width: double.infinity,
+              child: _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple.shade700,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: _submit,
+                child: const Text(
+                  "Remove Stock",
+                  style: TextStyle(fontSize: 20,color: Colors.white),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-

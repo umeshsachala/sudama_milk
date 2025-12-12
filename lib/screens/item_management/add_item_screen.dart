@@ -74,10 +74,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _stockCtrl = TextEditingController(text: '0');
   bool _isLoading = false;
-  final CollectionReference itemsRef = FirebaseFirestore.instance.collection('items');
+
+  final CollectionReference itemsRef =
+  FirebaseFirestore.instance.collection('items');
 
   Future<void> _saveItem() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isLoading = true);
 
     final name = _nameCtrl.text.trim();
@@ -89,14 +92,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'stock': stock,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item added')));
-        Navigator.pop(context);
-      }
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Item added')));
+
+      Navigator.pop(context);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
   }
 
@@ -110,25 +115,82 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Item')),
+      appBar: AppBar(
+        title: const Text("Add Item"),
+        backgroundColor: Colors.deepPurple,
+      ),
+
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Item name'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter name' : null),
-                  const SizedBox(height: 12),
-                  TextFormField(controller: _stockCtrl, decoration: const InputDecoration(labelText: 'Stock (number)'), keyboardType: TextInputType.number, validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter stock' : null),
-                  const SizedBox(height: 20),
-                  _isLoading ? const CircularProgressIndicator() : ElevatedButton(onPressed: _saveItem, child: const Text('Save Item')),
-                ],
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ITEM NAME INPUT
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextFormField(
+                  controller: _nameCtrl,
+                  decoration: const InputDecoration(
+                    hintText: "Item Name",
+                    border: InputBorder.none,
+                  ),
+                  validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "Enter item name" : null,
+                ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 16),
+
+              // STOCK INPUT
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextFormField(
+                  controller: _stockCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: "Initial Stock (0 by default)",
+                    border: InputBorder.none,
+                  ),
+                  validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "Enter stock value" : null,
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // SAVE BUTTON
+              SizedBox(
+                width: double.infinity,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _saveItem,
+                  child: const Text(
+                    "Save Item",
+                    style: TextStyle(fontSize: 20,color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

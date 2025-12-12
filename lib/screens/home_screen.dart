@@ -219,9 +219,22 @@ class _HomescreenState extends State<Homescreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sudama Milk"),
-        centerTitle: true,
-        backgroundColor: Colors.deepPurple.shade50,
+        backgroundColor: Colors.deepPurple,
+        elevation: 0,
+        leading: const Icon(
+          Icons.dashboard_customize_rounded,
+          size: 30,
+          color: Colors.white,
+        ),
+        title: const Text(
+          "Sudama Milk",
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.2,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
