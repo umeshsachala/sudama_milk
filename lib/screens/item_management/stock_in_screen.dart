@@ -83,33 +83,49 @@ class _StockInScreenState extends State<StockInScreen> {
         "${now.day}/${now.month}/${now.year}  ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: true, // enables back button
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        title: Row(
-          children: const [
-            SizedBox(width: 10),
-            Text(
-              "Sudama Milk",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.3,
-                color: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: AppBar(
+          elevation: 0,
+          automaticallyImplyLeading: true,
+          backgroundColor: Colors.transparent,
+
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
               ),
             ),
-          ],
+          ),
+
+          titleSpacing: 0,
+
+          title: Row(
+            children: [
+
+              const SizedBox(width: 12),
+
+              // Title
+              const Text(
+                "Sudama Milk",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.3,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+
 
 
       body: Padding(
@@ -224,111 +240,6 @@ class _StockInScreenState extends State<StockInScreen> {
 
                 const SizedBox(height: 12),
 
-                // CURRENT TIME
-                Text(
-                  "Current Time: $currentFormattedTime",
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 20),
-
-                // LAST ADDED STOCK INFO
-                if (lastItemName != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.shade200,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Last Stock Added:",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 15)),
-                        const SizedBox(height: 6),
-                        Text("Item: $lastItemName"),
-                        Text("Quantity: $lastQty"),
-                        Text("Time: $lastTime"),
-                      ],
-                    ),
-                  ),
-
-                const SizedBox(height: 25),
-
-                // ---------------------------------------------------------
-                // FULL STOCK-IN HISTORY FOR SELECTED ITEM
-                // ---------------------------------------------------------
-                if (_selectedId != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Stock In History:",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
-
-                      StreamBuilder<QuerySnapshot>(
-                        stream: txRef
-                            .where("itemId", isEqualTo: _selectedId)
-                            .where("type", isEqualTo: "in")
-                            .orderBy("timestamp", descending: true)
-                            .snapshots(),
-                        builder: (context, snap) {
-                          if (!snap.hasData) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-
-                          final txDocs = snap.data!.docs;
-
-                          if (txDocs.isEmpty) {
-                            return const Text(
-                              "No stock-in history available.",
-                              style: TextStyle(color: Colors.grey),
-                            );
-                          }
-
-                          return Column(
-                            children: txDocs.map((doc) {
-                              final data =
-                              doc.data() as Map<String, dynamic>;
-                              final ts = data['timestamp'] as Timestamp?;
-                              final dt = ts?.toDate();
-                              final time = dt == null
-                                  ? "No time"
-                                  : "${dt.day}/${dt.month}/${dt.year}  ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
-
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                margin: const EdgeInsets.only(bottom: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        Text("Qty: ${data['qty']}",
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold)),
-                                        Text("Time: $time"),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
               ],
             ),
           ),
