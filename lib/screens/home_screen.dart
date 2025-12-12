@@ -201,6 +201,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:sudama_milk/screens/item_management/item_detail_screen.dart';
 import 'item_management/add_item_screen.dart';
 import 'item_management/stock_in_screen.dart';
 import 'item_management/stock_out_screen.dart';
@@ -333,25 +334,36 @@ class _HomescreenState extends State<Homescreen> {
                       final minute = updated.minute.toString().padLeft(2, '0');
                       final period = updated.hour >= 12 ? "PM" : "AM";
 
+                      // inside ListView.builder -> return Card(
                       return Card(
                         child: ListTile(
                           title: Text(name),
                           subtitle: Text("Stock: $stock\nLast update: $hour:$minute $period  ${updated.day}/${updated.month}/${updated.year}"),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (v) async {
-                              if (v == 'delete') {
-                                await itemsRef.doc(doc.id).delete();
-                              } else if (v == 'edit') {
-                                // optional: implement edit dialog or screen
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              PopupMenuItem(value: 'delete', child: Text('Delete')),
-                            ],
-                          ),
+                          onTap: () {
+                            // navigate to detail screen and pass docId & name
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ItemDetailScreen(itemId: doc.id, itemName: name),
+                              ),
+                            );
+                          },
+                          // trailing: PopupMenuButton<String>(
+                          //   onSelected: (v) async {
+                          //     if (v == 'delete') {
+                          //       await itemsRef.doc(doc.id).delete();
+                          //     } else if (v == 'edit') {
+                          //       // optional: implement edit dialog or screen
+                          //     }
+                          //   },
+                          //   itemBuilder: (_) => const [
+                          //     PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          //     PopupMenuItem(value: 'delete', child: Text('Delete')),
+                          //   ],
+                          // ),
                         ),
                       );
+
                     },
                   );
                 },
