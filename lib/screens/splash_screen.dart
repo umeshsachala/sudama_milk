@@ -77,7 +77,7 @@ class _splashState extends State<splash>
                     ],
                   ),
                   child: Image.asset(
-                    "assets/images/Logo.png",
+                    "assets/images/logo.png",
                     width: 300,
                   ),
                 ),

@@ -84,9 +84,33 @@ class _StockInScreenState extends State<StockInScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Stock In"),
-        backgroundColor: Colors.deepPurple,
+        automaticallyImplyLeading: true, // enables back button
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: Row(
+          children: const [
+            SizedBox(width: 10),
+            Text(
+              "Sudama Milk",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.3,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
+
 
       body: Padding(
         padding: const EdgeInsets.all(16),
