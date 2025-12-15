@@ -213,21 +213,44 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 width: double.infinity,
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple.shade700,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    : GestureDetector(
+                  onTap: _saveItem,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF6A5AE0),
+                          Color(0xFF8A7FFD),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.purpleAccent.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "Save Item",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.6,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
-                  onPressed: _saveItem,
-                  child: const Text(
-                    "Save Item",
-                    style: TextStyle(fontSize: 20,color: Colors.white),
-                  ),
                 ),
-              ),
+              )
+
             ],
           ),
         ),

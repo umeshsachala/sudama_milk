@@ -277,22 +277,45 @@ class _StockOutScreenState extends State<StockOutScreen> {
             SizedBox(
               width: double.infinity,
               child: _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  ? const Center(child: CircularProgressIndicator())
+                  : GestureDetector(
+                onTap: _submit,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFE53935), // Red shade
+                        Color(0xFFD81B60), // Pinkish red
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(14)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.redAccent.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "Remove Stock",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-                onPressed: _submit,
-                child: const Text(
-                  "Remove Stock",
-                  style: TextStyle(fontSize: 20,color: Colors.white),
-                ),
               ),
-            ),
+            )
+
           ],
         ),
       ),

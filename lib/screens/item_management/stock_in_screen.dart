@@ -217,27 +217,47 @@ class _StockInScreenState extends State<StockInScreen> {
 
                 const SizedBox(height: 25),
 
-                // BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      : GestureDetector(
+                    onTap: _submit,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFF43A047), // Dark Green
+                            Color(0xFF66BB6A), // Light Green
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(14)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.greenAccent.withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ),
-                    onPressed: _submit,
-                    child: const Text(
-                      "Add Stock",
-                      style: TextStyle(fontSize: 20,color: Colors.white),
+                      child: const Center(
+                        child: Text(
+                          "Add Stock",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.6,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
 
               ],
