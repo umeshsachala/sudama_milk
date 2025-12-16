@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class ItemDetailScreen extends StatefulWidget {
   final String itemId;
@@ -23,6 +24,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   String _filter = 'all'; // all | in | out
 
+  // 🔥 AGO TIME FUNCTION (ONLY ADDITION)
+  String _agoTime(dynamic ts) {
+    if (ts == null) return '';
+    if (ts is Timestamp) {
+      return timeago.format(ts.toDate());
+    } else if (ts is DateTime) {
+      return timeago.format(ts);
+    }
+    return '';
+  }
+
+  // (Kept for safety, not used now)
   String _formatDateTime(DateTime dt) {
     final day = dt.day.toString().padLeft(2, '0');
     final month = dt.month.toString().padLeft(2, '0');
@@ -79,7 +92,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 final data = snap.data!.data() as Map<String, dynamic>;
                 final stock = data['stock'] ?? 0;
                 final ts = data['updatedAt'] as Timestamp?;
-                final updated = ts?.toDate() ?? DateTime.now();
 
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -115,8 +127,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           const Text("Last Updated",
                               style: TextStyle(color: Colors.grey)),
                           const SizedBox(height: 6),
-                          Text(_formatDateTime(updated),
-                              style: const TextStyle(fontSize: 12)),
+                          Text(
+                            _agoTime(ts), // 🔥 AGO TIME
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
                         ],
                       ),
                     ],
@@ -171,8 +186,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           data['type'].toString().toLowerCase() == 'in';
                       final qty = data['qty'] ?? 0;
                       final ts = data['timestamp'] as Timestamp?;
-                      final time =
-                      ts == null ? '' : _formatDateTime(ts.toDate());
 
                       return Container(
                         padding: const EdgeInsets.all(12),
@@ -202,7 +215,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  time,
+                                  _agoTime(ts), // 🔥 AGO TIME
                                   style: const TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey),
