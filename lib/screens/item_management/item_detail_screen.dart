@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class ItemDetailScreen extends StatefulWidget {
   final String itemId;
@@ -21,15 +22,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   final CollectionReference txRef =
   FirebaseFirestore.instance.collection('stock_transactions');
 
-  String _formatDateTime(DateTime dt) {
-    final day = dt.day.toString().padLeft(2, '0');
-    final month = dt.month.toString().padLeft(2, '0');
-    final year = dt.year;
-    final hour =
-    (dt.hour % 12 == 0 ? 12 : dt.hour % 12).toString().padLeft(2, '0');
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? "PM" : "AM";
-    return "$day/$month/$year  $hour:$minute $period";
+  /// 🔥 AGO TIME FUNCTION
+  String agoTime(dynamic ts) {
+    if (ts == null) return '';
+    if (ts is Timestamp) {
+      return timeago.format(ts.toDate());
+    } else if (ts is DateTime) {
+      return timeago.format(ts);
+    }
+    return '';
   }
 
   @override
@@ -43,33 +44,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // ITEM SUMMARY (stock, last updated)
+            // 🔹 ITEM SUMMARY
             StreamBuilder<DocumentSnapshot>(
               stream: itemsRef.doc(widget.itemId).snapshots(),
               builder: (context, snap) {
-                if (snap.hasError) return const Text('Error loading item');
                 if (!snap.hasData) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
-                final data = snap.data!.data() as Map<String, dynamic>?;
-                if (data == null) {
-                  return const Text('Item not found');
-                }
-
+                final data = snap.data!.data() as Map<String, dynamic>;
                 final stock = data['stock'] ?? 0;
-                final ts = data['updatedAt'];
-                DateTime updated;
-                if (ts is Timestamp) {
-                  updated = ts.toDate();
-                } else if (ts is DateTime) {
-                  updated = ts;
-                } else {
-                  updated = DateTime.now();
-                }
+                final updatedAt = data['updatedAt'];
 
                 return Container(
                   width: double.infinity,
@@ -79,7 +64,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(.04), blurRadius: 8)
+                      BoxShadow(
+                        color: Colors.black.withOpacity(.05),
+                        blurRadius: 8,
+                      )
                     ],
                   ),
                   child: Row(
@@ -91,9 +79,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           const Text("Current Stock",
                               style: TextStyle(color: Colors.grey)),
                           const SizedBox(height: 6),
-                          Text("$stock",
-                              style: const TextStyle(
-                                  fontSize: 28, fontWeight: FontWeight.bold)),
+                          Text(
+                            "$stock",
+                            style: const TextStyle(
+                                fontSize: 28, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                       Column(
@@ -102,8 +92,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           const Text("Last Updated",
                               style: TextStyle(color: Colors.grey)),
                           const SizedBox(height: 6),
-                          Text(_formatDateTime(updated),
-                              style: const TextStyle(fontSize: 12)),
+                          Text(
+                            agoTime(updatedAt), // 🔥 AGO TIME HERE
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
                         ],
                       ),
                     ],
@@ -114,16 +107,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
             const SizedBox(height: 16),
 
-            // Header for transactions
-            Align(
+            const Align(
               alignment: Alignment.centerLeft,
-              child: Text("Transactions",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(
+                "Transactions",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
 
             const SizedBox(height: 10),
 
-            // TRANSACTIONS LIST
+            // 🔹 TRANSACTION LIST
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: txRef
@@ -131,15 +125,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     .orderBy('timestamp', descending: true)
                     .snapshots(),
                 builder: (context, snap) {
-                  if (snap.hasError)
-                    return const Center(child: Text('Error loading transactions'));
-                  if (!snap.hasData)
+                  if (!snap.hasData) {
                     return const Center(child: CircularProgressIndicator());
+                  }
 
                   final docs = snap.data!.docs;
                   if (docs.isEmpty) {
                     return const Center(
-                        child: Text("No transactions yet.",
+                        child: Text("No transactions yet",
                             style: TextStyle(color: Colors.grey)));
                   }
 
@@ -147,20 +140,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     itemCount: docs.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      final d = docs[index];
-                      final data = d.data() as Map<String, dynamic>;
-                      final type = (data['type'] ?? '').toString();
-                      final qty = data['qty'] ?? 0;
-                      final ts = data['timestamp'] as Timestamp?;
-                      final dt = ts?.toDate();
-                      final timeStr = dt == null ? "No time" : _formatDateTime(dt);
+                      final data =
+                      docs[index].data() as Map<String, dynamic>;
+                      final isIn =
+                          (data['type'] ?? '').toString().toLowerCase() == 'in';
 
-                      final isIn = type.toLowerCase() == 'in';
-
-                      // ---- Clean row WITHOUT avatar ----
                       return Container(
                         padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.symmetric(horizontal: 0),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(12),
@@ -168,38 +154,41 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Left: type + qty
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isIn ? "Stock In" : "Stock Out",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: isIn
-                                          ? Colors.green.shade700
-                                          : Colors.red.shade700,
-                                    ),
+                            // LEFT
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isIn ? "Stock In" : "Stock Out",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isIn
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text("Qty: $qty"),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text("Qty: ${data['qty'] ?? 0}"),
+                              ],
                             ),
 
-                            // Right: time (and optional user)
+                            // RIGHT
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(timeStr,
+                                Text(
+                                  agoTime(data['timestamp']), // 🔥 AGO TIME
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                                if (data['user'] != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    data['user'],
                                     style: const TextStyle(
-                                        fontSize: 12, color: Colors.grey)),
-                                const SizedBox(height: 4),
-                                if (data.containsKey('user') && data['user'] != null)
-                                  Text("${data['user']}",
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey)),
+                                        fontSize: 12, color: Colors.grey),
+                                  ),
+                                ]
                               ],
                             ),
                           ],
