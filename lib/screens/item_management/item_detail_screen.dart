@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 class ItemDetailScreen extends StatefulWidget {
   final String itemId;
@@ -22,50 +21,74 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   final CollectionReference txRef =
   FirebaseFirestore.instance.collection('stock_transactions');
 
-  /// 🔥 AGO TIME FUNCTION
-  String agoTime(dynamic ts) {
-    if (ts == null) return '';
-    if (ts is Timestamp) {
-      return timeago.format(ts.toDate());
-    } else if (ts is DateTime) {
-      return timeago.format(ts);
-    }
-    return '';
+  String _filter = 'all'; // all | in | out
+
+  String _formatDateTime(DateTime dt) {
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = dt.month.toString().padLeft(2, '0');
+    final year = dt.year;
+    final hour =
+    (dt.hour % 12 == 0 ? 12 : dt.hour % 12).toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour >= 12 ? "PM" : "AM";
+    return "$day/$month/$year  $hour:$minute $period";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ---------------- APP BAR ----------------
       appBar: AppBar(
         title: Text(widget.itemName),
         backgroundColor: Colors.deepPurple,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _filter,
+                dropdownColor: Colors.white,
+                icon: const Icon(Icons.filter_list, color: Colors.white),
+                items: const [
+                  DropdownMenuItem(value: 'all', child: Text('All')),
+                  DropdownMenuItem(value: 'in', child: Text('Stock In')),
+                  DropdownMenuItem(value: 'out', child: Text('Stock Out')),
+                ],
+                onChanged: (v) {
+                  if (v != null) setState(() => _filter = v);
+                },
+              ),
+            ),
+          )
+        ],
       ),
+
+      // ---------------- BODY ----------------
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // 🔹 ITEM SUMMARY
+            // ---------------- ITEM SUMMARY ----------------
             StreamBuilder<DocumentSnapshot>(
               stream: itemsRef.doc(widget.itemId).snapshots(),
               builder: (context, snap) {
                 if (!snap.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const CircularProgressIndicator();
                 }
 
                 final data = snap.data!.data() as Map<String, dynamic>;
                 final stock = data['stock'] ?? 0;
-                final updatedAt = data['updatedAt'];
+                final ts = data['updatedAt'] as Timestamp?;
+                final updated = ts?.toDate() ?? DateTime.now();
 
                 return Container(
-                  width: double.infinity,
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(.05),
+                        color: Colors.black.withOpacity(.04),
                         blurRadius: 8,
                       )
                     ],
@@ -92,11 +115,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           const Text("Last Updated",
                               style: TextStyle(color: Colors.grey)),
                           const SizedBox(height: 6),
-                          Text(
-                            agoTime(updatedAt), // 🔥 AGO TIME HERE
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
-                          ),
+                          Text(_formatDateTime(updated),
+                              style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     ],
@@ -107,17 +127,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
             const SizedBox(height: 16),
 
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Transactions",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // 🔹 TRANSACTION LIST
+            // ---------------- TRANSACTIONS ----------------
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: txRef
@@ -126,24 +136,43 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     .snapshots(),
                 builder: (context, snap) {
                   if (!snap.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const CircularProgressIndicator();
                   }
 
-                  final docs = snap.data!.docs;
+                  var docs = snap.data!.docs;
+
+                  // APPLY FILTER
+                  if (_filter != 'all') {
+                    docs = docs.where((d) {
+                      final type =
+                      (d['type'] ?? '').toString().toLowerCase();
+                      return type == _filter;
+                    }).toList();
+                  }
+
                   if (docs.isEmpty) {
                     return const Center(
-                        child: Text("No transactions yet",
-                            style: TextStyle(color: Colors.grey)));
+                      child: Text(
+                        "No transactions found",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
                   }
 
                   return ListView.separated(
                     itemCount: docs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, __) =>
+                    const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final data =
                       docs[index].data() as Map<String, dynamic>;
+
                       final isIn =
-                          (data['type'] ?? '').toString().toLowerCase() == 'in';
+                          data['type'].toString().toLowerCase() == 'in';
+                      final qty = data['qty'] ?? 0;
+                      final ts = data['timestamp'] as Timestamp?;
+                      final time =
+                      ts == null ? '' : _formatDateTime(ts.toDate());
 
                       return Container(
                         padding: const EdgeInsets.all(12),
@@ -154,7 +183,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // LEFT
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -162,33 +190,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                   isIn ? "Stock In" : "Stock Out",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: isIn
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700,
+                                    color:
+                                    isIn ? Colors.green : Colors.red,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text("Qty: ${data['qty'] ?? 0}"),
+                                Text("Qty: $qty"),
                               ],
                             ),
-
-                            // RIGHT
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  agoTime(data['timestamp']), // 🔥 AGO TIME
+                                  time,
                                   style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey),
+                                      fontSize: 12,
+                                      color: Colors.grey),
                                 ),
-                                if (data['user'] != null) ...[
-                                  const SizedBox(height: 4),
+                                if (data['user'] != null)
                                   Text(
-                                    data['user'],
+                                    "${data['user']}",
                                     style: const TextStyle(
-                                        fontSize: 12, color: Colors.grey),
+                                        fontSize: 12,
+                                        color: Colors.grey),
                                   ),
-                                ]
                               ],
                             ),
                           ],

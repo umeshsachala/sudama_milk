@@ -219,8 +219,11 @@ class _StockOutScreenState extends State<StockOutScreen> {
                 final docs = snap.data!.docs;
 
                 return Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),

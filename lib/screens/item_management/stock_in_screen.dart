@@ -161,8 +161,9 @@ class _StockInScreenState extends State<StockInScreen> {
                     final docs = snap.data!.docs;
 
                     return Container(
+                      width: double.infinity, // ✅ container width
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
+                        horizontal: 14,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
