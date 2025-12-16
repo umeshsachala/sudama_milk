@@ -24,27 +24,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   String _filter = 'all'; // all | in | out
 
-  // 🔥 AGO TIME FUNCTION (ONLY ADDITION)
   String _agoTime(dynamic ts) {
     if (ts == null) return '';
-    if (ts is Timestamp) {
-      return timeago.format(ts.toDate());
-    } else if (ts is DateTime) {
-      return timeago.format(ts);
-    }
+    if (ts is Timestamp) return timeago.format(ts.toDate());
+    if (ts is DateTime) return timeago.format(ts);
     return '';
-  }
-
-  // (Kept for safety, not used now)
-  String _formatDateTime(DateTime dt) {
-    final day = dt.day.toString().padLeft(2, '0');
-    final month = dt.month.toString().padLeft(2, '0');
-    final year = dt.year;
-    final hour =
-    (dt.hour % 12 == 0 ? 12 : dt.hour % 12).toString().padLeft(2, '0');
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? "PM" : "AM";
-    return "$day/$month/$year  $hour:$minute $period";
   }
 
   @override
@@ -91,7 +75,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
                 final data = snap.data!.data() as Map<String, dynamic>;
                 final stock = data['stock'] ?? 0;
-                final ts = data['updatedAt'] as Timestamp?;
+                final ts = data['updatedAt'];
 
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -128,7 +112,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                               style: TextStyle(color: Colors.grey)),
                           const SizedBox(height: 6),
                           Text(
-                            _agoTime(ts), // 🔥 AGO TIME
+                            _agoTime(ts),
                             style: const TextStyle(
                                 fontSize: 12, color: Colors.grey),
                           ),
@@ -182,20 +166,27 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       final data =
                       docs[index].data() as Map<String, dynamic>;
 
-                      final isIn =
-                          data['type'].toString().toLowerCase() == 'in';
+                      final type =
+                      data['type'].toString().toLowerCase();
+                      final isIn = type == 'in';
                       final qty = data['qty'] ?? 0;
-                      final ts = data['timestamp'] as Timestamp?;
+                      final ts = data['timestamp'];
+
+                      final customerName = data['customerName'];
+                      final customerPhone = data['customerPhone'];
 
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // LEFT
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -203,30 +194,42 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                   isIn ? "Stock In" : "Stock Out",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color:
-                                    isIn ? Colors.green : Colors.red,
+                                    color: isIn
+                                        ? Colors.green
+                                        : Colors.red,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text("Qty: $qty"),
+
+                                // 🔥 CUSTOMER DETAILS (ONLY FOR OUT)
+                                if (!isIn &&
+                                    customerName != null &&
+                                    customerPhone != null)
+                                  Padding(
+                                    padding:
+                                    const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      "$customerName ($customerPhone)",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
+
+                            // RIGHT
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  _agoTime(ts), // 🔥 AGO TIME
+                                  _agoTime(ts),
                                   style: const TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey),
                                 ),
-                                if (data['user'] != null)
-                                  Text(
-                                    "${data['user']}",
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey),
-                                  ),
                               ],
                             ),
                           ],

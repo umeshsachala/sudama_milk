@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:sudama_milk/screens/profile_screen.dart';
+import 'add_customer_screen.dart';
 import 'item_management/add_item_screen.dart';
 import 'item_management/stock_in_screen.dart';
 import 'item_management/stock_out_screen.dart';
@@ -255,16 +257,28 @@ class _HomescreenState extends State<Homescreen> {
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text("Profile"),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
           ),
 
           ListTile(
             leading: const Icon(Icons.group_add),
             title: const Text("Add Customer"),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
+              );
+            },
           ),
 
-          const Spacer(),
+          SizedBox(height: 400,),
           const Divider(),
 
           ListTile(

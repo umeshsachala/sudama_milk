@@ -1,85 +1,3 @@
-// import 'package:flutter/material.dart';
-//
-// class StockOutScreen extends StatefulWidget {
-//   final List products;
-//   final VoidCallback refresh;
-//
-//   const StockOutScreen(this.products, this.refresh, {super.key});
-//
-//   @override
-//   State<StockOutScreen> createState() => _StockOutScreenState();
-// }
-//
-// class _StockOutScreenState extends State<StockOutScreen> {
-//   String? selectedItem;
-//   final TextEditingController qtyController = TextEditingController();
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text("Stock Out"), backgroundColor: const Color(0xFF6A11CB)),
-//       body: Padding(
-//         padding: const EdgeInsets.all(20),
-//         child: Column(
-//           children: [
-//             DropdownButtonFormField(
-//               decoration: const InputDecoration(border: OutlineInputBorder()),
-//               value: selectedItem,
-//               hint: const Text("Select Item"),
-//               items: widget.products.map((item) {
-//                 return DropdownMenuItem(
-//                   value: item["name"],
-//                   child: Text(item["name"]),
-//                 );
-//               }).toList(),
-//               onChanged: (value) {
-//                 setState(() => selectedItem = value as String?);
-//               },
-//             ),
-//
-//             const SizedBox(height: 20),
-//
-//             TextField(
-//               controller: qtyController,
-//               keyboardType: TextInputType.number,
-//               decoration: const InputDecoration(
-//                 labelText: "Quantity",
-//                 border: OutlineInputBorder(),
-//               ),
-//             ),
-//
-//             const SizedBox(height: 20),
-//
-//             ElevatedButton(
-//               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6A11CB)),
-//               onPressed: () {
-//                 if (selectedItem != null && qtyController.text.isNotEmpty) {
-//                   int qty = int.parse(qtyController.text);
-//                   var product = widget.products.firstWhere((p) => p["name"] == selectedItem);
-//
-//                   if (product["stock"] >= qty) {
-//                     product["stock"] -= qty;
-//                     widget.refresh();
-//                     Navigator.pop(context);
-//                   } else {
-//                     ScaffoldMessenger.of(context).showSnackBar(
-//                       const SnackBar(content: Text("Not enough stock")),
-//                     );
-//                   }
-//                 }
-//               },
-//               child: const Text("Reduce Stock"),
-//             )
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -91,235 +9,183 @@ class StockOutScreen extends StatefulWidget {
 }
 
 class _StockOutScreenState extends State<StockOutScreen> {
-  final CollectionReference itemsRef =
-  FirebaseFirestore.instance.collection('items');
-  final CollectionReference txRef =
-  FirebaseFirestore.instance.collection('stock_transactions');
+  final itemsRef = FirebaseFirestore.instance.collection('items');
+  final txRef = FirebaseFirestore.instance.collection('stock_transactions');
+  final customerRef = FirebaseFirestore.instance.collection('customers');
 
-  String? _selectedId;
-  String? _selectedName;
-  final TextEditingController _qtyCtrl = TextEditingController(text: '1');
-  bool _isLoading = false;
+  String? _itemId;
+  String? _itemName;
+
+  String? _customerId;
+  String? _customerName;
+  String? _customerPhone;
+
+  final _qtyCtrl = TextEditingController(text: '1');
+  bool _loading = false;
 
   Future<void> _submit() async {
-    if (_selectedId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Select item')));
+    if (_itemId == null || _customerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select item and customer')),
+      );
       return;
     }
 
     final qty = int.tryParse(_qtyCtrl.text) ?? 0;
-    if (qty <= 0) {
+    if (qty <= 0) return;
+
+    setState(() => _loading = true);
+
+    final itemDoc = itemsRef.doc(_itemId);
+    final snap = await itemDoc.get();
+    final stock = snap['stock'] ?? 0;
+
+    if (stock < qty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Enter valid qty')));
+          .showSnackBar(const SnackBar(content: Text('Insufficient stock')));
+      setState(() => _loading = false);
       return;
     }
 
-    setState(() => _isLoading = true);
+    await itemDoc.update({
+      'stock': FieldValue.increment(-qty),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
 
-    final docRef = itemsRef.doc(_selectedId);
+    await txRef.add({
+      'itemId': _itemId,
+      'itemName': _itemName,
+      'type': 'out',
+      'qty': qty,
+      'customerId': _customerId,
+      'customerName': _customerName,
+      'customerPhone': _customerPhone,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
 
-    try {
-      final snap = await docRef.get();
-      final current = (snap.data() as Map<String, dynamic>)['stock'] ?? 0;
-      final currentInt =
-      (current is int) ? current : int.tryParse(current.toString()) ?? 0;
-
-      if (currentInt < qty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Insufficient stock')));
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      await docRef.update({
-        'stock': FieldValue.increment(-qty),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      await txRef.add({
-        'itemId': _selectedId,
-        'itemName': _selectedName ?? '',
-        'type': 'out',
-        'qty': qty,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Stock removed')));
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: AppBar(
-          elevation: 0,
-          automaticallyImplyLeading: true,
-          backgroundColor: Colors.transparent,
-
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
-              ),
-            ),
-          ),
-
-          titleSpacing: 0,
-
-          title: Row(
-            children: [
-              const SizedBox(width: 12),
-
-              // Title
-              const Text(
-                "Sudama Milk",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.3,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text("Stock Out"),
+        backgroundColor: Colors.deepPurple,
       ),
-
-
-
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ITEM DROPDOWN (MATCHING DESIGN)
+
+            /// ITEM DROPDOWN
             StreamBuilder<QuerySnapshot>(
               stream: itemsRef.orderBy('name').snapshots(),
-              builder: (context, snap) {
-                if (!snap.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final docs = snap.data!.docs;
-
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedId,
-                      hint: const Text("Select Item"),
-                      items: docs.map((d) {
-                        final data = d.data() as Map<String, dynamic>;
-                        return DropdownMenuItem(
-                          value: d.id,
-                          child: Text(
-                              "${data['name']} (Stock: ${data['stock'] ?? 0})"),
-                        );
-                      }).toList(),
-                      onChanged: (v) {
-                        final sel = docs.firstWhere((e) => e.id == v);
-                        final data = sel.data() as Map<String, dynamic>;
-
-                        setState(() {
-                          _selectedId = v;
-                          _selectedName = data['name'];
-                        });
-                      },
-                    ),
-                  ),
+              builder: (_, snap) {
+                if (!snap.hasData) return const CircularProgressIndicator();
+                return _dropdown(
+                  hint: "Select Item",
+                  value: _itemId,
+                  items: snap.data!.docs.map((d) {
+                    final data = d.data() as Map<String, dynamic>;
+                    return DropdownMenuItem(
+                      value: d.id,
+                      child: Text("${data['name']} (Stock ${data['stock']})"),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    final d =
+                    snap.data!.docs.firstWhere((e) => e.id == v);
+                    setState(() {
+                      _itemId = v;
+                      _itemName = d['name'];
+                    });
+                  },
                 );
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // QTY FIELD (NO OUTLINE)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _qtyCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  hintText: "Enter Quantity",
-                  border: InputBorder.none,
-                ),
+            /// CUSTOMER DROPDOWN
+            StreamBuilder<QuerySnapshot>(
+              stream: customerRef.orderBy('name').snapshots(),
+              builder: (_, snap) {
+                if (!snap.hasData) return const CircularProgressIndicator();
+                return _dropdown(
+                  hint: "Select Customer",
+                  value: _customerId,
+                  items: snap.data!.docs.map((d) {
+                    final data = d.data() as Map<String, dynamic>;
+                    return DropdownMenuItem(
+                      value: d.id,
+                      child: Text("${data['name']} (${data['phone']})"),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    final d =
+                    snap.data!.docs.firstWhere((e) => e.id == v);
+                    setState(() {
+                      _customerId = v;
+                      _customerName = d['name'];
+                      _customerPhone = d['phone'];
+                    });
+                  },
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            /// QTY
+            TextField(
+              controller: _qtyCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: "Quantity",
+                border: OutlineInputBorder(),
               ),
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
 
-            // REMOVE BUTTON
+            /// SUBMIT
             SizedBox(
               width: double.infinity,
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : GestureDetector(
-                onTap: _submit,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFFE53935), // Red shade
-                        Color(0xFFD81B60), // Pinkish red
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.all(Radius.circular(14)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.redAccent.withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "Remove Stock",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.6,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
                 ),
+                onPressed: _loading ? null : _submit,
+                child: const Text("REMOVE STOCK"),
               ),
             )
-
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dropdown({
+    required String hint,
+    required String? value,
+    required List<DropdownMenuItem<String>> items,
+    required Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          hint: Text(hint),
+          value: value,
+          items: items,
+          isExpanded: true,
+          onChanged: onChanged,
         ),
       ),
     );
