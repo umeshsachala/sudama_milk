@@ -1,5 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -9,79 +10,148 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _nameCtrl = TextEditingController();
-  final _shopCtrl = TextEditingController();
-  bool _loading = false;
+  final ImagePicker _picker = ImagePicker();
+  File? _profileImage;
 
-  final docRef =
-  FirebaseFirestore.instance.collection('profile').doc('owner');
+  final TextEditingController ownerCtrl = TextEditingController();
+  final TextEditingController businessCtrl = TextEditingController();
+  final TextEditingController addressCtrl = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  Future<void> _pickImage() async {
+    final XFile? image =
+    await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
 
-  Future<void> _load() async {
-    final doc = await docRef.get();
-    if (doc.exists) {
-      final d = doc.data()!;
-      _nameCtrl.text = d['name'] ?? '';
-      _shopCtrl.text = d['shop'] ?? '';
+    if (image != null) {
+      setState(() {
+        _profileImage = File(image.path);
+      });
     }
   }
 
-  Future<void> _save() async {
-    setState(() => _loading = true);
-    await docRef.set({
-      'name': _nameCtrl.text.trim(),
-      'shop': _shopCtrl.text.trim(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    setState(() => _loading = false);
-    Navigator.pop(context);
+  void _saveProfile() {
+    debugPrint("Owner Name: ${ownerCtrl.text}");
+    debugPrint("Business Name: ${businessCtrl.text}");
+    debugPrint("Address: ${addressCtrl.text}");
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Profile Saved Successfully")),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profile"),
         backgroundColor: Colors.deepPurple,
+        title: const Text(
+          "Profile",
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            /// Avatar
+            Center(
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 55,
+                    backgroundColor: Colors.grey.shade300,
+                    backgroundImage:
+                    _profileImage != null ? FileImage(_profileImage!) : null,
+                    child: _profileImage == null
+                        ? const Icon(Icons.person, size: 55, color: Colors.white)
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: InkWell(
+                      onTap: _pickImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.deepPurple,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            /// Owner Name
             TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(
+              controller: ownerCtrl,
+              decoration: InputDecoration(
                 labelText: "Owner Name",
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.person),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-            const SizedBox(height: 15),
+
+            const SizedBox(height: 20),
+
+            /// Business Name
             TextField(
-              controller: _shopCtrl,
-              decoration: const InputDecoration(
-                labelText: "Shop Name",
-                border: OutlineInputBorder(),
+              controller: businessCtrl,
+              decoration: InputDecoration(
+                labelText: "Business Name",
+                prefixIcon: const Icon(Icons.store),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-            const SizedBox(height: 25),
+
+            const SizedBox(height: 20),
+
+            /// Address
+            TextField(
+              controller: addressCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: "Address",
+                prefixIcon: const Icon(Icons.location_on),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            /// Save Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple),
-                onPressed: _loading ? null : _save,
-                child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("SAVE",
-                    style: TextStyle(color: Colors.white)),
+                  backgroundColor: Colors.deepPurple,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: _saveProfile,
+                child: const Text(
+                  "Save Profile",
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
               ),
-            )
+            ),
           ],
         ),
       ),
