@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:sudama_milk/screens/profile_screen.dart';
+import 'CustomerListScreen.dart';
 import 'add_customer_screen.dart';
 import 'item_management/add_item_screen.dart';
 import 'item_management/stock_in_screen.dart';
@@ -273,7 +274,7 @@ class _HomescreenState extends State<Homescreen> {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
+                MaterialPageRoute(builder: (_) => const CustomerListScreen()),
               );
             },
           ),
