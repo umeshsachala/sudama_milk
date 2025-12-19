@@ -131,138 +131,123 @@ class _StockInScreenState extends State<StockInScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                )
-              ],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --------------------------------------------
+              // DROPDOWN
+              // --------------------------------------------
+              StreamBuilder<QuerySnapshot>(
+                stream: itemsRef.orderBy('name').snapshots(),
+                builder: (context, snap) {
+                  if (!snap.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --------------------------------------------
-                // DROPDOWN
-                // --------------------------------------------
-                StreamBuilder<QuerySnapshot>(
-                  stream: itemsRef.orderBy('name').snapshots(),
-                  builder: (context, snap) {
-                    if (!snap.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                  final docs = snap.data!.docs;
 
-                    final docs = snap.data!.docs;
-
-                    return Container(
-                      width: double.infinity, // ✅ container width
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedId,
-                          hint: const Text("Select Item"),
-                          items: docs.map((d) {
-                            final data = d.data() as Map<String, dynamic>;
-                            return DropdownMenuItem(
-                              value: d.id,
-                              child: Text(data['name']),
-                            );
-                          }).toList(),
-                          onChanged: (v) {
-                            final sel = docs.firstWhere((e) => e.id == v);
-                            final data = sel.data() as Map<String, dynamic>;
-
-                            setState(() {
-                              _selectedId = v;
-                              _selectedName = data['name'];
-                            });
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // QTY FIELD
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextField(
-                    controller: _qtyCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      hintText: "Enter Quantity",
-                      border: InputBorder.none,
+                  return Container(
+                    width: double.infinity, // ✅ container width
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
                     ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedId,
+                        hint: const Text("Select Item"),
+                        items: docs.map((d) {
+                          final data = d.data() as Map<String, dynamic>;
+                          return DropdownMenuItem(
+                            value: d.id,
+                            child: Text(data['name']),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          final sel = docs.firstWhere((e) => e.id == v);
+                          final data = sel.data() as Map<String, dynamic>;
+
+                          setState(() {
+                            _selectedId = v;
+                            _selectedName = data['name'];
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // QTY FIELD
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  controller: _qtyCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: "Enter Quantity",
+                    border: InputBorder.none,
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 25),
+              const SizedBox(height: 25),
 
-                SizedBox(
-                  width: double.infinity,
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : GestureDetector(
-                    onTap: _submit,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF43A047), // Dark Green
-                            Color(0xFF66BB6A), // Light Green
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.all(Radius.circular(14)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.greenAccent.withOpacity(0.4),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
+              SizedBox(
+                width: double.infinity,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : GestureDetector(
+                  onTap: _submit,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF43A047), // Dark Green
+                          Color(0xFF66BB6A), // Light Green
                         ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      child: const Center(
-                        child: Text(
-                          "Add Stock",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.6,
-                            color: Colors.white,
-                          ),
+                      borderRadius: BorderRadius.all(Radius.circular(14)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.greenAccent.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "Add Stock",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.6,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+              ),
+              const SizedBox(height: 12),
 
-              ],
-            ),
+            ],
           ),
         ),
       ),
