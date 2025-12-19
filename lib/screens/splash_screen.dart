@@ -1,14 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:sudama_milk/screens/Home_screen.dart';
 import 'package:sudama_milk/screens/onboarding_screen.dart';
 
-class splash extends StatefulWidget {
-  const splash({super.key});
+class SplashView extends StatefulWidget {
+  const SplashView({super.key});
 
   @override
-  State<splash> createState() => _splashState();
+  State<SplashView> createState() => _SplashViewState();
 }
 
-class _splashState extends State<splash>
+class _SplashViewState extends State<SplashView>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fade;
@@ -22,17 +24,29 @@ class _splashState extends State<splash>
       duration: const Duration(seconds: 2),
     );
 
-    _fade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _fade = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
 
+    checkLogin();
+  }
+
+  void checkLogin() {
     Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-      );
+      if (FirebaseAuth.instance.currentUser != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const Homescreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        );
+      }
     });
   }
 
@@ -49,10 +63,7 @@ class _splashState extends State<splash>
         width: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF6A11CB),
-              Color(0xFF2575FC),
-            ],
+            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -76,10 +87,7 @@ class _splashState extends State<splash>
                       ),
                     ],
                   ),
-                  child: Image.asset(
-                    "assets/images/logo.png",
-                    width: 300,
-                  ),
+                  child: Image.asset("assets/images/logo.png", width: 300),
                 ),
 
                 const SizedBox(height: 25),
