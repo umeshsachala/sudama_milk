@@ -26,7 +26,6 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    setState(() => _loading = false);
     Navigator.pop(context);
   }
 
@@ -65,12 +64,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple),
+                  backgroundColor: Colors.deepPurple,
+                ),
                 onPressed: _loading ? null : _save,
                 child: _loading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("ADD CUSTOMER",
-                    style: TextStyle(color: Colors.white)),
+                    : const Text("SAVE", style: TextStyle(color: Colors.white)),
               ),
             )
           ],
