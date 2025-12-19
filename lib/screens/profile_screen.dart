@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -17,6 +18,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController businessCtrl = TextEditingController();
   final TextEditingController addressCtrl = TextEditingController();
 
+  bool _isLoading = false;
+
+  /// Firestore reference
+  final CollectionReference profileRef =
+  FirebaseFirestore.instance.collection('profiles');
+
   Future<void> _pickImage() async {
     final XFile? image =
     await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
@@ -28,14 +35,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _saveProfile() {
-    debugPrint("Owner Name: ${ownerCtrl.text}");
-    debugPrint("Business Name: ${businessCtrl.text}");
-    debugPrint("Address: ${addressCtrl.text}");
+  Future<void> _saveProfile() async {
+    if (ownerCtrl.text.trim().isEmpty ||
+        businessCtrl.text.trim().isEmpty ||
+        addressCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Profile Saved Successfully")),
-    );
+    setState(() => _isLoading = true);
+
+    try {
+      await profileRef.add({
+        'ownerName': ownerCtrl.text.trim(),
+        'businessName': businessCtrl.text.trim(),
+        'address': addressCtrl.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile Saved Successfully")),
+      );
+
+      ownerCtrl.clear();
+      businessCtrl.clear();
+      addressCtrl.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -63,7 +96,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundImage:
                     _profileImage != null ? FileImage(_profileImage!) : null,
                     child: _profileImage == null
-                        ? const Icon(Icons.person, size: 55, color: Colors.white)
+                        ? const Icon(Icons.person,
+                        size: 55, color: Colors.white)
                         : null,
                   ),
                   Positioned(
@@ -145,10 +179,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _saveProfile,
-                child: const Text(
+                onPressed: _isLoading ? null : _saveProfile,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
                   "Save Profile",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style:
+                  TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
             ),
