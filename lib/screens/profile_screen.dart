@@ -12,47 +12,43 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final user = FirebaseAuth.instance.currentUser!;
 
-  late TextEditingController nameCtrl;
-  late TextEditingController phoneCtrl;
+  // controllers
+  final TextEditingController nameCtrl = TextEditingController();
+  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController phoneCtrl = TextEditingController();
 
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    nameCtrl = TextEditingController(text: user.displayName ?? '');
-    phoneCtrl = TextEditingController();
-    _loadLocalPhone();
+
+    // ✅ NAME FROM GOOGLE (displayName OR email fallback)
+    nameCtrl.text = user.displayName ??
+        (user.email != null ? user.email!.split('@').first : 'Google User');
+
+    emailCtrl.text = user.email ?? '';
+    _loadLocalData();
   }
 
-  Future<void> _loadLocalPhone() async {
+  Future<void> _loadLocalData() async {
     final prefs = await SharedPreferences.getInstance();
     phoneCtrl.text = prefs.getString('local_phone') ?? '';
+    emailCtrl.text = prefs.getString('local_email') ?? emailCtrl.text;
   }
 
   Future<void> _save() async {
     setState(() => _loading = true);
 
-    // Save name in Firebase Auth
-    await user.updateDisplayName(nameCtrl.text.trim());
-    await user.reload();
-
-    // Save phone locally
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('local_phone', phoneCtrl.text.trim());
+    await prefs.setString('local_email', emailCtrl.text.trim());
 
     setState(() => _loading = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Profile Saved")),
     );
-  }
-
-  @override
-  void dispose() {
-    nameCtrl.dispose();
-    phoneCtrl.dispose();
-    super.dispose();
   }
 
   InputDecoration _input(String label, IconData icon) {
@@ -69,10 +65,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
+  void dispose() {
+    nameCtrl.dispose();
+    emailCtrl.dispose();
+    phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Profile"), centerTitle: true),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(16),
         child: Container(
           padding: const EdgeInsets.all(18),
@@ -83,12 +87,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               BoxShadow(
                 color: Colors.black.withOpacity(.06),
                 blurRadius: 10,
-                offset: const Offset(0, 4),
               )
             ],
           ),
           child: Column(
             children: [
+              // GOOGLE PHOTO
               CircleAvatar(
                 radius: 45,
                 backgroundImage:
@@ -100,28 +104,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 25),
 
-              // NAME (Saved in Firebase Auth)
+              // ✅ GOOGLE NAME (READ ONLY – FIXED)
               TextField(
                 controller: nameCtrl,
-                decoration: _input("Name", Icons.person),
-              ),
-
-              const SizedBox(height: 14),
-
-              // EMAIL (Always from Google Login)
-              TextField(
                 enabled: false,
-                decoration: _input("Email", Icons.email)
-                    .copyWith(hintText: user.email),
+                style: const TextStyle(
+                  color: Colors.black, // text color
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: _input("Name", Icons.person).copyWith(
+                  fillColor: Colors.grey.shade200, // background color
+                  prefixIcon: const Icon(
+                    Icons.person,
+                    color: Colors.black,
+                  ),
+                  labelStyle: const TextStyle(
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+
+
+              const SizedBox(height: 14),
+
+              // EMAIL (LOCAL EDITABLE)
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _input("Email", Icons.email),
               ),
 
               const SizedBox(height: 14),
 
-              // PHONE (Saved locally)
+              // PHONE (LOCAL EDITABLE)
               TextField(
                 controller: phoneCtrl,
-                decoration: _input("Phone", Icons.phone),
                 keyboardType: TextInputType.phone,
+                decoration: _input("Phone", Icons.phone),
               ),
 
               const SizedBox(height: 25),

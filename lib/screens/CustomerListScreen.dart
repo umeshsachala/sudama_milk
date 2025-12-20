@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'add_customer_screen.dart';
+import 'edit_customer_screen.dart';
 
 class CustomerListScreen extends StatelessWidget {
   const CustomerListScreen({super.key});
@@ -16,9 +17,9 @@ class CustomerListScreen extends StatelessWidget {
         backgroundColor: Colors.deepPurple,
       ),
 
-      // ----------- CUSTOMER LIST -----------
       body: StreamBuilder<QuerySnapshot>(
-        stream: customerRef.orderBy('createdAt', descending: true).snapshots(),
+        stream:
+        customerRef.orderBy('createdAt', descending: true).snapshots(),
         builder: (context, snap) {
           if (!snap.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -34,19 +35,34 @@ class CustomerListScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
+              final doc = docs[index];
+              final data = doc.data() as Map<String, dynamic>;
 
-              return Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.deepPurple,
-                    child: Text(
-                      data['name'][0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EditCustomerScreen(
+                        docId: doc.id,
+                        name: data['name'],
+                        phone: data['phone'],
+                      ),
                     ),
+                  );
+                },
+                child: Card(
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.deepPurple,
+                      child: Text(
+                        data['name'][0].toUpperCase(),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    title: Text(data['name']),
+                    subtitle: Text(data['phone']),
                   ),
-                  title: Text(data['name']),
-                  subtitle: Text(data['phone']),
                 ),
               );
             },
@@ -54,12 +70,11 @@ class CustomerListScreen extends StatelessWidget {
         },
       ),
 
-      // ----------- FLOATING BUTTON -----------
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.deepPurple,
         child: const Icon(Icons.add, color: Colors.white),
-        onPressed: () async {
-          await Navigator.push(
+        onPressed: () {
+          Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
           );

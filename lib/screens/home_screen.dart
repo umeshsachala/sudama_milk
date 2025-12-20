@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sudama_milk/screens/profile_screen.dart';
 import 'CustomerListScreen.dart';
-import 'add_customer_screen.dart';
-import 'item_management/add_item_screen.dart';
+import 'item_management/items_list_screen.dart';
 import 'item_management/stock_in_screen.dart';
 import 'item_management/stock_out_screen.dart';
 import 'item_management/item_detail_screen.dart';
+import 'onboarding_screen.dart';
 
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
@@ -20,6 +22,28 @@ class _HomescreenState extends State<Homescreen> {
   FirebaseFirestore.instance.collection('items');
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      await GoogleSignIn.instance.signOut();
+
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+            (route) => false,
+      );
+    } catch (e) {
+      debugPrint("Logout error: $e");
+    }
+  }
+
+  final user = FirebaseAuth.instance.currentUser;
+
+  String get googleName =>
+      user?.displayName ??
+          (user?.email != null ? user!.email!.split('@').first : 'Google User');
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +75,6 @@ class _HomescreenState extends State<Homescreen> {
           title: Row(
             children: [
               const SizedBox(width: 12),
-
               GestureDetector(
                 onTap: () => _scaffoldKey.currentState!.openDrawer(),
                 child: Container(
@@ -67,9 +90,7 @@ class _HomescreenState extends State<Homescreen> {
                   ),
                 ),
               ),
-
               const SizedBox(width: 12),
-
               const Text(
                 "Sudama Milk",
                 style: TextStyle(
@@ -118,18 +139,22 @@ class _HomescreenState extends State<Homescreen> {
                         children: [
                           const Text("Total Items",
                               style: TextStyle(color: Colors.grey)),
-                          Text("$totalItems",
-                              style: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text(
+                            "$totalItems",
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                       Column(
                         children: [
                           const Text("Total Stock",
                               style: TextStyle(color: Colors.grey)),
-                          Text("$totalStock",
-                              style: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text(
+                            "$totalStock",
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                     ],
@@ -195,7 +220,7 @@ class _HomescreenState extends State<Homescreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddItemScreen()),
+            MaterialPageRoute(builder: (_) => ItemsListScreen()),
           );
         },
         child: const Icon(Icons.add, color: Colors.white),
@@ -210,21 +235,25 @@ class _HomescreenState extends State<Homescreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style:
+              ElevatedButton.styleFrom(backgroundColor: Colors.green),
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const StockInScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const StockInScreen()),
                 );
               },
               child: const Text("Stock In"),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style:
+              ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const StockOutScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const StockOutScreen()),
                 );
               },
               child: const Text("Stock Out"),
@@ -246,12 +275,16 @@ class _HomescreenState extends State<Homescreen> {
                 colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
               ),
             ),
-            accountName: const Text("Sudama Milk"),
-            accountEmail: const Text("Milk Management"),
-            currentAccountPicture: const CircleAvatar(
+            accountName: Text(googleName),
+            accountEmail: Text(user?.email ?? ''),
+            currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(Icons.person,
-                  size: 40, color: Colors.deepPurple),
+              backgroundImage:
+              user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
+              child: user?.photoURL == null
+                  ? const Icon(Icons.person,
+                  size: 40, color: Colors.deepPurple)
+                  : null,
             ),
           ),
 
@@ -269,24 +302,44 @@ class _HomescreenState extends State<Homescreen> {
 
           ListTile(
             leading: const Icon(Icons.group_add),
-            title: const Text("Add Customer"),
+            title: const Text("Customers"),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CustomerListScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const CustomerListScreen()),
               );
             },
           ),
 
-          SizedBox(height: 400,),
+          ListTile(
+            leading: const Icon(Icons.inventory_2),
+            title: const Text("Items"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ItemsListScreen()),
+              );
+            },
+          ),
+
+          const Spacer(),
           const Divider(),
 
+          /// LOGOUT
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text("Logout",
-                style: TextStyle(color: Colors.red)),
-            onTap: () => Navigator.pop(context),
+            leading:
+            const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              "Logout",
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () async {
+              Navigator.pop(context);
+              await _logout();
+            },
           ),
         ],
       ),
