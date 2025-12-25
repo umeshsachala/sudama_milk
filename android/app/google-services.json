@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "100185279816-gk982v0437vsfb4l1sv28017b6orb2e1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sudama_milk",
+            "certificate_hash": "c9e388e18e4187af7ad8ff5cb6f15a966160a7fc"
+          }
+        },
+        {
           "client_id": "100185279816-kuuk6caqbd3uv68i18d3jctgij981nuu.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.sudama_milk",
             "certificate_hash": "f9609a53232e8d64b179b8d2aae05bc6138c4f4c"
+          }
+        },
+        {
+          "client_id": "100185279816-ltoo95i802as2piphvtggufq9cvi2k3e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sudama_milk",
+            "certificate_hash": "92f83c83382eb43c739fd5021ca58763433da8b6"
           }
         },
         {
@@ -37,6 +53,13 @@
             {
               "client_id": "100185279816-4h8akeluvph08vnjm2aduo9gjqmviaj8.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "100185279816-fc4dud0k519oq5tetcur5fcup089cc09.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.sudamaMilk"
+              }
             }
           ]
         }
