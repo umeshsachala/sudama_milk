@@ -87,8 +87,12 @@ class _SplashViewState extends State<SplashView>
                       ),
                     ],
                   ),
-                  child: Image.asset("assets/images/logo.png", width: 300),
+                  child: Image.asset(
+                    "assets/images/logo.png",
+                    width: 300,
+                  ),
                 ),
+
 
                 const SizedBox(height: 25),
 

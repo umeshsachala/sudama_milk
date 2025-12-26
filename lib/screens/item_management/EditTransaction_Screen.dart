@@ -71,39 +71,20 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       backgroundColor: const Color(0xffF4F6F4),
 
       // ---------------- APP BAR ----------------
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: AppBar(
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          centerTitle: true, // 👈 ADD THIS
-          backgroundColor: Colors.transparent,
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF388E3C), // green shade700
-                  Color(0xFF2E7D32), // green shade800
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
-              ),
-            ),
-          ),
-          title: const Text(
-            "Edit",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.3,
-              color: Colors.white,
-            ),
-          ),
+      appBar: AppBar(
+        backgroundColor: Colors.green.shade700,
+        elevation: 0,
+        title: const Text(
+          "Edit",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        leading: const BackButton(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check, color: Colors.white),
+            onPressed: _save,
+          )
+        ],
       ),
 
       // ---------------- BODY ----------------

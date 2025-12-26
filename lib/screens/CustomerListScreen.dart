@@ -12,11 +12,47 @@ class CustomerListScreen extends StatelessWidget {
     FirebaseFirestore.instance.collection('customers');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("All Customers"),
-        backgroundColor: Colors.deepPurple,
+      // ================= APP BAR =================
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: AppBar(
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF388E3C),
+                  Color(0xFF2E7D32),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
+              ),
+            ),
+          ),
+          title: const Text(
+            "Customers",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
 
+      // ================= BODY =================
       body: StreamBuilder<QuerySnapshot>(
         stream:
         customerRef.orderBy('createdAt', descending: true).snapshots(),
@@ -28,7 +64,12 @@ class CustomerListScreen extends StatelessWidget {
           final docs = snap.data!.docs;
 
           if (docs.isEmpty) {
-            return const Center(child: Text("No customers found"));
+            return const Center(
+              child: Text(
+                "No customers found",
+                style: TextStyle(color: Colors.grey),
+              ),
+            );
           }
 
           return ListView.builder(
@@ -51,17 +92,69 @@ class CustomerListScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.deepPurple,
-                      child: Text(
-                        data['name'][0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                    title: Text(data['name']),
-                    subtitle: Text(data['phone']),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // ---------- AVATAR ----------
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor:
+                        const Color(0xFF388E3C).withOpacity(0.15),
+                        child: Text(
+                          data['name'][0].toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF388E3C),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      // ---------- NAME + PHONE ----------
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data['name'],
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              data['phone'],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -70,8 +163,9 @@ class CustomerListScreen extends StatelessWidget {
         },
       ),
 
+      // ================= FAB =================
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color(0xFF263238),
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () {
           Navigator.push(

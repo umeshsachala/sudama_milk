@@ -69,104 +69,190 @@ class _StockOutScreenState extends State<StockOutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Stock Out"),
-        backgroundColor: Colors.deepPurple,
+      // ================= APP BAR (SAME THEME) =================
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: AppBar(
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF388E3C),
+                  Color(0xFF2E7D32),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
+              ),
+            ),
+          ),
+          title: const Text(
+            "Stock Out",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
-      body: Padding(
+      // =======================================================
+
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // ================= FORM CARD =================
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  /// ITEM DROPDOWN
+                  StreamBuilder<QuerySnapshot>(
+                    stream: itemsRef.orderBy('name').snapshots(),
+                    builder: (_, snap) {
+                      if (!snap.hasData) {
+                        return const CircularProgressIndicator();
+                      }
+                      return _dropdown(
+                        hint: "Select Item",
+                        value: _itemId,
+                        items: snap.data!.docs.map((d) {
+                          final data = d.data() as Map<String, dynamic>;
+                          return DropdownMenuItem(
+                            value: d.id,
+                            child: Text(
+                              "${data['name']} (Stock ${data['stock']})",
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          final d = snap.data!.docs
+                              .firstWhere((e) => e.id == v);
+                          setState(() {
+                            _itemId = v;
+                            _itemName = d['name'];
+                          });
+                        },
+                      );
+                    },
+                  ),
 
-            /// ITEM DROPDOWN
-            StreamBuilder<QuerySnapshot>(
-              stream: itemsRef.orderBy('name').snapshots(),
-              builder: (_, snap) {
-                if (!snap.hasData) return const CircularProgressIndicator();
-                return _dropdown(
-                  hint: "Select Item",
-                  value: _itemId,
-                  items: snap.data!.docs.map((d) {
-                    final data = d.data() as Map<String, dynamic>;
-                    return DropdownMenuItem(
-                      value: d.id,
-                      child: Text("${data['name']} (Stock ${data['stock']})"),
-                    );
-                  }).toList(),
-                  onChanged: (v) {
-                    final d =
-                    snap.data!.docs.firstWhere((e) => e.id == v);
-                    setState(() {
-                      _itemId = v;
-                      _itemName = d['name'];
-                    });
-                  },
-                );
-              },
-            ),
+                  const SizedBox(height: 16),
 
-            const SizedBox(height: 12),
+                  /// CUSTOMER DROPDOWN
+                  StreamBuilder<QuerySnapshot>(
+                    stream: customerRef.orderBy('name').snapshots(),
+                    builder: (_, snap) {
+                      if (!snap.hasData) {
+                        return const CircularProgressIndicator();
+                      }
+                      return _dropdown(
+                        hint: "Select Customer",
+                        value: _customerId,
+                        items: snap.data!.docs.map((d) {
+                          final data = d.data() as Map<String, dynamic>;
+                          return DropdownMenuItem(
+                            value: d.id,
+                            child: Text(
+                              "${data['name']} (${data['phone']})",
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          final d = snap.data!.docs
+                              .firstWhere((e) => e.id == v);
+                          setState(() {
+                            _customerId = v;
+                            _customerName = d['name'];
+                            _customerPhone = d['phone'];
+                          });
+                        },
+                      );
+                    },
+                  ),
 
-            /// CUSTOMER DROPDOWN
-            StreamBuilder<QuerySnapshot>(
-              stream: customerRef.orderBy('name').snapshots(),
-              builder: (_, snap) {
-                if (!snap.hasData) return const CircularProgressIndicator();
-                return _dropdown(
-                  hint: "Select Customer",
-                  value: _customerId,
-                  items: snap.data!.docs.map((d) {
-                    final data = d.data() as Map<String, dynamic>;
-                    return DropdownMenuItem(
-                      value: d.id,
-                      child: Text("${data['name']} (${data['phone']})"),
-                    );
-                  }).toList(),
-                  onChanged: (v) {
-                    final d =
-                    snap.data!.docs.firstWhere((e) => e.id == v);
-                    setState(() {
-                      _customerId = v;
-                      _customerName = d['name'];
-                      _customerPhone = d['phone'];
-                    });
-                  },
-                );
-              },
-            ),
+                  const SizedBox(height: 16),
 
-            const SizedBox(height: 12),
-
-            /// QTY
-            TextField(
-              controller: _qtyCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: "Quantity",
-                border: OutlineInputBorder(),
+                  /// QTY FIELD
+                  TextField(
+                    controller: _qtyCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: "Enter Quantity",
+                      prefixIcon:
+                      const Icon(Icons.confirmation_number_outlined),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
 
-            /// SUBMIT
+            // ================= SUBMIT BUTTON =================
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
+              height: 54,
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor:
+                  const Color(0xFF37474F), // dark slate (non-red)
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                onPressed: _loading ? null : _submit,
-                child: const Text("REMOVE STOCK"),
+                onPressed: _submit,
+                child: const Text(
+                  "Remove Stock",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: 0.6,
+                  ),
+                ),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
+  // ================= DROPDOWN WIDGET (UI ONLY) =================
   Widget _dropdown({
     required String hint,
     required String? value,
@@ -174,7 +260,7 @@ class _StockOutScreenState extends State<StockOutScreen> {
     required Function(String?) onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),

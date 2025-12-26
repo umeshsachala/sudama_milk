@@ -52,15 +52,62 @@ class _HomescreenState extends State<Homescreen> {
       drawer: _appDrawer(context),
 
       // ---------------- APP BAR ----------------
-      appBar: AppBar(
-        backgroundColor: Colors.green.shade700,
-        elevation: 0,
-        title: const Text(
-          "Sudama MILK",
-          style: TextStyle(fontWeight: FontWeight.bold),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: AppBar(
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              color: Colors.green, // fallback (optional)
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF388E3C), // green shade700
+                  Color(0xFF2E7D32), // green shade800 (slightly darker)
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
+              ),
+            ),
+          ),
+
+          titleSpacing: 0,
+          title: Row(
+            children: [
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () => _scaffoldKey.currentState!.openDrawer(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.dashboard_customize_rounded,
+                    size: 26,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                "Sudama Milk",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.3,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-        ],
       ),
 
       // ---------------- BODY ----------------
@@ -154,11 +201,10 @@ class _HomescreenState extends State<Homescreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    ItemDetailScreen(
-                                      itemId: doc.id,
-                                      itemName: data['name'],
-                                    ),
+                                builder: (_) => ItemDetailScreen(
+                                  itemId: doc.id,
+                                  itemName: data['name'],
+                                ),
                               ),
                             );
                           },
@@ -223,45 +269,32 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-// ---------------- DRAWER ----------------
+  // ---------------- DRAWER ----------------
   Widget _appDrawer(BuildContext context) {
     return Drawer(
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            margin: EdgeInsets.zero,
             decoration: const BoxDecoration(
-              color: Color(0xFF0F7A3D), // professional green
-            ),
-            accountName: Text(
-              googleName,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+              gradient: LinearGradient(
+                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
               ),
             ),
-            accountEmail: Text(
-              user?.email ?? '',
-              style: const TextStyle(color: Colors.white70),
-            ),
+            accountName: Text(googleName),
+            accountEmail: Text(user?.email ?? ''),
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
               backgroundImage:
               user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
               child: user?.photoURL == null
-                  ? const Icon(
-                Icons.person,
-                size: 40,
-                color: Color(0xFF0F7A3D),
-              )
+                  ? const Icon(Icons.person,
+                  size: 40, color: Colors.deepPurple)
                   : null,
             ),
           ),
 
-          // -------- SAME NAVIGATION --------
           ListTile(
-            leading: const Icon(Icons.person, color: Color(0xFF0F7A3D)),
+            leading: const Icon(Icons.person),
             title: const Text("Profile"),
             onTap: () {
               Navigator.pop(context);
@@ -273,21 +306,20 @@ class _HomescreenState extends State<Homescreen> {
           ),
 
           ListTile(
-            leading: const Icon(Icons.group_add, color: Color(0xFF0F7A3D)),
+            leading: const Icon(Icons.group_add),
             title: const Text("Customers"),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const CustomerListScreen(),
-                ),
+                    builder: (_) => const CustomerListScreen()),
               );
             },
           ),
 
           ListTile(
-            leading: const Icon(Icons.inventory_2, color: Color(0xFF0F7A3D)),
+            leading: const Icon(Icons.inventory_2),
             title: const Text("Items"),
             onTap: () {
               Navigator.pop(context);
@@ -297,12 +329,14 @@ class _HomescreenState extends State<Homescreen> {
               );
             },
           ),
-          SizedBox(height: 200,),
+
+          const Spacer(),
           const Divider(),
 
-          // -------- LOGOUT (SAME LOGIC) --------
+          /// LOGOUT
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
+            leading:
+            const Icon(Icons.logout, color: Colors.red),
             title: const Text(
               "Logout",
               style: TextStyle(color: Colors.red),

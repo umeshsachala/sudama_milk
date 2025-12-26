@@ -19,7 +19,6 @@ class _StockInScreenState extends State<StockInScreen> {
   final TextEditingController _qtyCtrl = TextEditingController(text: '1');
   bool _isLoading = false;
 
-  // Last added details
   String? lastItemName;
   int? lastQty;
   String? lastTime;
@@ -78,22 +77,26 @@ class _StockInScreenState extends State<StockInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final currentFormattedTime =
-        "${now.day}/${now.month}/${now.year}  ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
-
     return Scaffold(
+      // ================= APP BAR (UNCHANGED) =================
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: AppBar(
           elevation: 0,
-          automaticallyImplyLeading: true,
+          automaticallyImplyLeading: false,
+          centerTitle: true,
           backgroundColor: Colors.transparent,
-
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                colors: [
+                  Color(0xFF388E3C),
+                  Color(0xFF2E7D32),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -103,152 +106,136 @@ class _StockInScreenState extends State<StockInScreen> {
               ),
             ),
           ),
-
-          titleSpacing: 0,
-
-          title: Row(
-            children: [
-
-              const SizedBox(width: 12),
-
-              // Title
-              const Text(
-                "Sudama Milk",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.3,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+          title: const Text(
+            "Add Stock",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
+      // ======================================================
 
-
-
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --------------------------------------------
-              // DROPDOWN
-              // --------------------------------------------
-              StreamBuilder<QuerySnapshot>(
-                stream: itemsRef.orderBy('name').snapshots(),
-                builder: (context, snap) {
-                  if (!snap.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final docs = snap.data!.docs;
-
-                  return Container(
-                    width: double.infinity, // ✅ container width
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedId,
-                        hint: const Text("Select Item"),
-                        items: docs.map((d) {
-                          final data = d.data() as Map<String, dynamic>;
-                          return DropdownMenuItem(
-                            value: d.id,
-                            child: Text(data['name']),
-                          );
-                        }).toList(),
-                        onChanged: (v) {
-                          final sel = docs.firstWhere((e) => e.id == v);
-                          final data = sel.data() as Map<String, dynamic>;
-
-                          setState(() {
-                            _selectedId = v;
-                            _selectedName = data['name'];
-                          });
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // QTY FIELD
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextField(
-                  controller: _qtyCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: "Enter Quantity",
-                    border: InputBorder.none,
+        child: Column(
+          children: [
+            // ================= FORM CARD =================
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                ),
+                ],
               ),
+              child: Column(
+                children: [
+                  // ---------- ITEM DROPDOWN ----------
+                  StreamBuilder<QuerySnapshot>(
+                    stream: itemsRef.orderBy('name').snapshots(),
+                    builder: (context, snap) {
+                      if (!snap.hasData) {
+                        return const CircularProgressIndicator();
+                      }
 
-              const SizedBox(height: 25),
+                      final docs = snap.data!.docs;
 
-              SizedBox(
-                width: double.infinity,
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : GestureDetector(
-                  onTap: _submit,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF43A047), // Dark Green
-                          Color(0xFF66BB6A), // Light Green
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.all(Radius.circular(14)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.greenAccent.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "Add Stock",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.6,
-                          color: Colors.white,
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedId,
+                            hint: const Text("Select Item"),
+                            isExpanded: true,
+                            items: docs.map((d) {
+                              final data = d.data() as Map<String, dynamic>;
+                              return DropdownMenuItem(
+                                value: d.id,
+                                child: Text(data['name']),
+                              );
+                            }).toList(),
+                            onChanged: (v) {
+                              final sel =
+                              docs.firstWhere((e) => e.id == v);
+                              final data =
+                              sel.data() as Map<String, dynamic>;
+                              setState(() {
+                                _selectedId = v;
+                                _selectedName = data['name'];
+                              });
+                            },
+                          ),
                         ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // ---------- QTY FIELD ----------
+                  TextField(
+                    controller: _qtyCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: "Enter Quantity",
+                      prefixIcon:
+                      const Icon(Icons.confirmation_number_outlined),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // ================= SUBMIT BUTTON =================
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                  const Color(0xFF263238), // charcoal (non-green)
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: _submit,
+                child: const Text(
+                  "Add Stock",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: 0.6,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

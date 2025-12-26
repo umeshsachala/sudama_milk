@@ -169,16 +169,37 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // =================== GREEN APP BAR ===================
       appBar: AppBar(
         title: Text(widget.itemName),
-        backgroundColor: Colors.deepPurple,
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF388E3C), // green shade700
+                Color(0xFF2E7D32), // green shade800
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(25),
+              bottomRight: Radius.circular(25),
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(Icons.filter_list, color: Colors.white),
             onPressed: _openFilterSheet,
           )
         ],
       ),
+      // =====================================================
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -316,8 +337,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                     isIn ? "Stock In" : "Stock Out",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color:
-                                      isIn ? Colors.green : Colors.red,
+                                      color: isIn
+                                          ? Colors.green
+                                          : Colors.red,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -345,23 +367,24 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                               ),
                             ),
 
-                            // -------- POPUP MENU (ADDED ONLY) --------
                             PopupMenuButton(
                               itemBuilder: (_) => const [
                                 PopupMenuItem(
                                     value: 'edit', child: Text("Edit")),
                                 PopupMenuItem(
-                                    value: 'delete', child: Text("Delete")),
+                                    value: 'delete',
+                                    child: Text("Delete")),
                               ],
                               onSelected: (v) {
                                 if (v == 'edit') {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => EditTransactionScreen(
-                                        itemId: widget.itemId,
-                                        txDoc: docs[index],
-                                      ),
+                                      builder: (_) =>
+                                          EditTransactionScreen(
+                                            itemId: widget.itemId,
+                                            txDoc: docs[index],
+                                          ),
                                     ),
                                   );
                                 }
