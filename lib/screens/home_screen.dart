@@ -95,9 +95,9 @@ class _HomescreenState extends State<Homescreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 15),
               const Text(
-                "Sudama Milk",
+                "ItemTrack",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -276,9 +276,7 @@ class _HomescreenState extends State<Homescreen> {
         children: [
           UserAccountsDrawerHeader(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-              ),
+              color: Colors.green
             ),
             accountName: Text(googleName),
             accountEmail: Text(user?.email ?? ''),

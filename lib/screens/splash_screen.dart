@@ -88,7 +88,7 @@ class _SplashViewState extends State<SplashView>
                     ],
                   ),
                   child: Image.asset(
-                    "assets/images/logo.png",
+                    "assets/images/Logo.png",
                     width: 300,
                   ),
                 ),
@@ -98,7 +98,7 @@ class _SplashViewState extends State<SplashView>
 
                 // Futuristic text
                 const Text(
-                  "Sudama Milk",
+                  "ItemTrack",
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
