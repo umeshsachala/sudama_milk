@@ -23,6 +23,12 @@ class _HomescreenState extends State<Homescreen> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  final user = FirebaseAuth.instance.currentUser;
+
+  String get googleName =>
+      user?.displayName ??
+          (user?.email != null ? user!.email!.split('@').first : 'Google User');
+
   Future<void> _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -39,12 +45,6 @@ class _HomescreenState extends State<Homescreen> {
     }
   }
 
-  final user = FirebaseAuth.instance.currentUser;
-
-  String get googleName =>
-      user?.displayName ??
-          (user?.email != null ? user!.email!.split('@').first : 'Google User');
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,11 +60,10 @@ class _HomescreenState extends State<Homescreen> {
           backgroundColor: Colors.transparent,
           flexibleSpace: Container(
             decoration: const BoxDecoration(
-              color: Colors.green, // fallback (optional)
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF388E3C), // green shade700
-                  Color(0xFF2E7D32), // green shade800 (slightly darker)
+                  Color(0xFF0B7D3B),
+                  Color(0xFF075A2B),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -75,34 +74,35 @@ class _HomescreenState extends State<Homescreen> {
               ),
             ),
           ),
-
-          titleSpacing: 0,
-          title: Row(
+          title: Stack(
             children: [
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () => _scaffoldKey.currentState!.openDrawer(),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.dashboard_customize_rounded,
-                    size: 26,
-                    color: Colors.white,
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => _scaffoldKey.currentState!.openDrawer(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.dashboard_customize_rounded,
+                      size: 26,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 15),
-              const Text(
-                "ItemTrack",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.3,
-                  color: Colors.white,
+              const Center(
+                child: Text(
+                  "ItemTrack",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.3,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -195,8 +195,7 @@ class _HomescreenState extends State<Homescreen> {
                       return Card(
                         child: ListTile(
                           title: Text(data['name'] ?? ''),
-                          subtitle:
-                          Text("Stock: ${data['stock'] ?? 0}"),
+                          subtitle: Text("Stock: ${data['stock'] ?? 0}"),
                           onTap: () {
                             Navigator.push(
                               context,
@@ -215,53 +214,100 @@ class _HomescreenState extends State<Homescreen> {
                 },
               ),
             ),
-          ],
-        ),
-      ),
 
-      // ---------------- FAB ----------------
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.deepPurple,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => ItemsListScreen()),
-          );
-        },
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            const SizedBox(height: 12),
 
-      // ---------------- BOTTOM BAR ----------------
-      bottomNavigationBar: Container(
-        height: 90,
-        padding: const EdgeInsets.symmetric(horizontal: 25),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            ElevatedButton(
-              style:
-              ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const StockInScreen()),
-                );
-              },
-              child: const Text("Stock In"),
-            ),
-            ElevatedButton(
-              style:
-              ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const StockOutScreen()),
-                );
-              },
-              child: const Text("Stock Out"),
+            // -------- 3 BUTTONS SAME LINE --------
+            Row(
+              children: [
+                // STOCK IN
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2ECC71),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 3,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const StockInScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.add_circle, color: Colors.white, size: 18),
+                    label: const Text(
+                      "Stock In",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // ADD ITEM
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5E35B1),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 3,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => ItemsListScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.inventory_2, color: Colors.white, size: 18),
+                    label: const Text(
+                      "Add Item",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // STOCK OUT
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE53935),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 3,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const StockOutScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.remove_circle, color: Colors.white, size: 18),
+                    label: const Text(
+                      "Stock Out",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -275,9 +321,7 @@ class _HomescreenState extends State<Homescreen> {
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(
-              color: Colors.green
-            ),
+            decoration: const BoxDecoration(color: Colors.green),
             accountName: Text(googleName),
             accountEmail: Text(user?.email ?? ''),
             currentAccountPicture: CircleAvatar(
@@ -290,7 +334,6 @@ class _HomescreenState extends State<Homescreen> {
                   : null,
             ),
           ),
-
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text("Profile"),
@@ -302,7 +345,6 @@ class _HomescreenState extends State<Homescreen> {
               );
             },
           ),
-
           ListTile(
             leading: const Icon(Icons.group_add),
             title: const Text("Customers"),
@@ -315,7 +357,6 @@ class _HomescreenState extends State<Homescreen> {
               );
             },
           ),
-
           ListTile(
             leading: const Icon(Icons.inventory_2),
             title: const Text("Items"),
@@ -327,18 +368,12 @@ class _HomescreenState extends State<Homescreen> {
               );
             },
           ),
-
           const Spacer(),
           const Divider(),
-
-          /// LOGOUT
           ListTile(
-            leading:
-            const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              "Logout",
-              style: TextStyle(color: Colors.red),
-            ),
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text("Logout",
+                style: TextStyle(color: Colors.red)),
             onTap: () async {
               Navigator.pop(context);
               await _logout();
