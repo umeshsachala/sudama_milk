@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:intl/intl.dart';
@@ -20,14 +21,30 @@ class ItemDetailScreen extends StatefulWidget {
 }
 
 class _ItemDetailScreenState extends State<ItemDetailScreen> {
-  final CollectionReference itemsRef =
-  FirebaseFirestore.instance.collection('items');
-  final CollectionReference txRef =
-  FirebaseFirestore.instance.collection('stock_transactions');
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  late final CollectionReference itemsRef;
+  late final CollectionReference txRef;
 
   String _filter = 'all'; // all | in | out
   DateTime? _fromDate;
   DateTime? _toDate;
+
+  @override
+  void initState() {
+    super.initState();
+
+    /// ✅ USER-WISE COLLECTIONS
+    itemsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('items');
+
+    txRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('stock_transactions');
+  }
 
   String _agoTime(dynamic ts) {
     if (ts == null) return '';
@@ -51,7 +68,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   // ---------------- DELETE TRANSACTION ----------------
   Future<void> _deleteTransaction(DocumentSnapshot doc) async {
     final data = doc.data() as Map<String, dynamic>;
-    final int qty = data['qty'];
+    final int qty = data['qty'] ?? 0;
     final String type = data['type'];
 
     final int diff = type == 'in' ? -qty : qty;
@@ -94,7 +111,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   ),
 
                   const SizedBox(height: 20),
-
                   const Text("Date Range"),
                   const SizedBox(height: 8),
                   InkWell(
@@ -160,56 +176,42 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return ChoiceChip(
       label: Text(label),
       selected: _filter == value,
-      onSelected: (_) {
-        setSheet(() => _filter = value);
-      },
+      onSelected: (_) => setSheet(() => _filter = value),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // =================== GREEN APP BAR ===================
+      // ---------------- APP BAR ----------------
       appBar: AppBar(
         title: Text(widget.itemName),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF388E3C), // green shade700
-                Color(0xFF2E7D32), // green shade800
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(25),
-              bottomRight: Radius.circular(25),
-            ),
-          ),
-        ),
+        backgroundColor: Colors.green,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
+            icon: const Icon(Icons.filter_list),
             onPressed: _openFilterSheet,
           )
         ],
       ),
-      // =====================================================
 
+      // ---------------- BODY ----------------
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ---------------- ITEM SUMMARY ----------------
+            /// ITEM SUMMARY
             StreamBuilder<DocumentSnapshot>(
               stream: itemsRef.doc(widget.itemId).snapshots(),
               builder: (context, snap) {
                 if (!snap.hasData) {
                   return const CircularProgressIndicator();
+                }
+
+                if (!snap.data!.exists) {
+                  return const Text("Item not found");
                 }
 
                 final data = snap.data!.data() as Map<String, dynamic>;
@@ -265,7 +267,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
             const SizedBox(height: 16),
 
-            // ---------------- TRANSACTIONS ----------------
+            /// TRANSACTIONS
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: txRef
@@ -326,7 +328,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: Column(
@@ -342,21 +343,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                           : Colors.red,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text("Qty: $qty"),
                                   if (!isIn &&
                                       customerName != null &&
                                       customerPhone != null)
-                                    Padding(
-                                      padding:
-                                      const EdgeInsets.only(top: 6),
-                                      child: Text(
-                                        "$customerName ($customerPhone)",
-                                        style:
-                                        const TextStyle(fontSize: 12),
-                                      ),
+                                    Text(
+                                      "$customerName ($customerPhone)",
+                                      style:
+                                      const TextStyle(fontSize: 12),
                                     ),
-                                  const SizedBox(height: 4),
                                   Text(
                                     _agoTime(ts),
                                     style: const TextStyle(
@@ -366,7 +361,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 ],
                               ),
                             ),
-
                             PopupMenuButton(
                               itemBuilder: (_) => const [
                                 PopupMenuItem(

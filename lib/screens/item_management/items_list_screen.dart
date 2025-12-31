@@ -1,13 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import 'Edit Item Screen.dart';
 import 'add_item_screen.dart';
 
 class ItemsListScreen extends StatelessWidget {
   ItemsListScreen({super.key});
 
-  final CollectionReference itemsRef =
-  FirebaseFirestore.instance.collection('items');
+  final String uid = FirebaseAuth.instance.currentUser!.uid;
 
   Color stockColor(int stock) {
     if (stock <= 5) return Colors.redAccent;
@@ -17,10 +18,14 @@ class ItemsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CollectionReference itemsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('items');
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
 
-      // ================= APP BAR =================
       // ================= APP BAR =================
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(72),
@@ -61,18 +66,15 @@ class ItemsListScreen extends StatelessWidget {
         ),
       ),
 
-
       // ================= BODY =================
       body: StreamBuilder<QuerySnapshot>(
         stream: itemsRef.orderBy('updatedAt', descending: true).snapshots(),
         builder: (context, snap) {
-          if (!snap.hasData) {
+          if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final docs = snap.data!.docs;
-
-          if (docs.isEmpty) {
+          if (!snap.hasData || snap.data!.docs.isEmpty) {
             return const Center(
               child: Text(
                 "No items added",
@@ -81,13 +83,15 @@ class ItemsListScreen extends StatelessWidget {
             );
           }
 
+          final docs = snap.data!.docs;
+
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
             itemCount: docs.length,
             itemBuilder: (context, i) {
               final doc = docs[i];
               final data = doc.data() as Map<String, dynamic>;
-              final int stock = data['stock'];
+              final int stock = data['stock'] ?? 0;
 
               return GestureDetector(
                 onTap: () {
@@ -159,7 +163,6 @@ class ItemsListScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // RIGHT ARROW
                       const Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 18,
@@ -186,7 +189,6 @@ class ItemsListScreen extends StatelessWidget {
           );
         },
       ),
-
     );
   }
 }

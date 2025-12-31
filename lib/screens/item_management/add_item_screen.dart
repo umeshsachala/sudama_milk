@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AddItemScreen extends StatefulWidget {
@@ -14,33 +15,33 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final TextEditingController _stockCtrl = TextEditingController(text: '0');
   bool _isLoading = false;
 
-  final CollectionReference itemsRef =
-  FirebaseFirestore.instance.collection('items');
-
   Future<void> _saveItem() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
+
+    final uid = FirebaseAuth.instance.currentUser!.uid;
 
     setState(() => _isLoading = true);
 
-    final name = _nameCtrl.text.trim();
-    final stock = int.tryParse(_stockCtrl.text.trim()) ?? 0;
-
     try {
-      await itemsRef.add({
-        'name': name,
-        'stock': stock,
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('items')
+          .add({
+        'name': _nameCtrl.text.trim(),
+        'stock': int.tryParse(_stockCtrl.text.trim()) ?? 0,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Item added')));
-
+      if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -54,7 +55,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ================= APP BAR (SAME AS ADD STOCK) =================
+      // ================= APP BAR (OLD DESIGN) =================
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: AppBar(
@@ -93,7 +94,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           ),
         ),
       ),
-      // ===============================================================
+      // ========================================================
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -132,7 +133,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         ),
                       ),
                       validator: (v) =>
-                      (v == null || v.trim().isEmpty)
+                      v == null || v.trim().isEmpty
                           ? "Enter item name"
                           : null,
                     ),
@@ -154,10 +155,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           borderSide: BorderSide.none,
                         ),
                       ),
-                      validator: (v) =>
-                      (v == null || v.trim().isEmpty)
-                          ? "Enter stock value"
-                          : null,
                     ),
                   ],
                 ),
@@ -165,23 +162,25 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
               const SizedBox(height: 28),
 
-              // ================= SAVE BUTTON (SAME STYLE) =================
+              // ================= SAVE BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 54,
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
+                child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                    const Color(0xFF263238), // same as Add Stock
+                    backgroundColor: const Color(0xFF263238),
                     elevation: 4,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: _saveItem,
-                  child: const Text(
+                  onPressed: _isLoading ? null : _saveItem,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  )
+                      : const Text(
                     "Save Item",
                     style: TextStyle(
                       fontSize: 18,
