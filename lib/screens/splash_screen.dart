@@ -1,7 +1,9 @@
+import 'package:Item_Register/screens/onboarding_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:sudama_milk/screens/Home_screen.dart';
-import 'package:sudama_milk/screens/onboarding_screen.dart';
+
+
+import 'home_screen.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -98,7 +100,7 @@ class _SplashViewState extends State<SplashView>
 
                 // Futuristic text
                 const Text(
-                  "ItemTrack",
+                  "Item Register",
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,

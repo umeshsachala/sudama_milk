@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class StockOutScreen extends StatefulWidget {
@@ -9,9 +10,12 @@ class StockOutScreen extends StatefulWidget {
 }
 
 class _StockOutScreenState extends State<StockOutScreen> {
-  final itemsRef = FirebaseFirestore.instance.collection('items');
-  final txRef = FirebaseFirestore.instance.collection('stock_transactions');
-  final customerRef = FirebaseFirestore.instance.collection('customers');
+  final user = FirebaseAuth.instance.currentUser!;
+
+  late final CollectionReference itemsRef;
+  final CollectionReference customerRef =
+  FirebaseFirestore.instance.collection('customers');
+  late final CollectionReference txRef;
 
   String? _itemId;
   String? _itemName;
@@ -22,6 +26,23 @@ class _StockOutScreenState extends State<StockOutScreen> {
 
   final _qtyCtrl = TextEditingController(text: '1');
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    /// ✅ SAME AS HOME SCREEN (USER-WISE ITEMS)
+    itemsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('items');
+
+    /// ✅ USER-WISE TRANSACTIONS
+    txRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('stock_transactions');
+  }
 
   Future<void> _submit() async {
     if (_itemId == null || _customerId == null) {
@@ -38,20 +59,32 @@ class _StockOutScreenState extends State<StockOutScreen> {
 
     final itemDoc = itemsRef.doc(_itemId);
     final snap = await itemDoc.get();
-    final stock = snap['stock'] ?? 0;
 
-    if (stock < qty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Insufficient stock')));
+    if (!snap.exists) {
       setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item not found')),
+      );
       return;
     }
 
+    final stock = (snap['stock'] ?? 0) as int;
+
+    if (stock < qty) {
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Insufficient stock')),
+      );
+      return;
+    }
+
+    /// 🔻 UPDATE STOCK
     await itemDoc.update({
       'stock': FieldValue.increment(-qty),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
+    /// 🧾 SAVE TRANSACTION
     await txRef.add({
       'itemId': _itemId,
       'itemName': _itemName,
@@ -63,20 +96,18 @@ class _StockOutScreenState extends State<StockOutScreen> {
       'timestamp': FieldValue.serverTimestamp(),
     });
 
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ================= APP BAR (SAME THEME) =================
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: AppBar(
           elevation: 0,
           automaticallyImplyLeading: false,
-          centerTitle: true,
-          backgroundColor: Colors.transparent,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -84,10 +115,7 @@ class _StockOutScreenState extends State<StockOutScreen> {
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF388E3C),
-                  Color(0xFF2E7D32),
-                ],
+                colors: [Color(0xFF388E3C), Color(0xFF2E7D32)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -97,24 +125,22 @@ class _StockOutScreenState extends State<StockOutScreen> {
               ),
             ),
           ),
+          centerTitle: true,
           title: const Text(
             "Stock Out",
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
               color: Colors.white,
             ),
           ),
         ),
       ),
-      // =======================================================
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ================= FORM CARD =================
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -137,15 +163,20 @@ class _StockOutScreenState extends State<StockOutScreen> {
                       if (!snap.hasData) {
                         return const CircularProgressIndicator();
                       }
+
+                      if (snap.data!.docs.isEmpty) {
+                        return const Text("No items available");
+                      }
+
                       return _dropdown(
                         hint: "Select Item",
                         value: _itemId,
                         items: snap.data!.docs.map((d) {
                           final data = d.data() as Map<String, dynamic>;
-                          return DropdownMenuItem(
+                          return DropdownMenuItem<String>(
                             value: d.id,
                             child: Text(
-                              "${data['name']} (Stock ${data['stock']})",
+                              "${data['name']} (Stock ${data['stock'] ?? 0})",
                             ),
                           );
                         }).toList(),
@@ -163,19 +194,24 @@ class _StockOutScreenState extends State<StockOutScreen> {
 
                   const SizedBox(height: 16),
 
-                  /// CUSTOMER DROPDOWN
+                  /// ✅ CUSTOMER DROPDOWN (GLOBAL – FIXED)
                   StreamBuilder<QuerySnapshot>(
-                    stream: customerRef.orderBy('name').snapshots(),
+                    stream: customerRef.orderBy('createdAt').snapshots(),
                     builder: (_, snap) {
                       if (!snap.hasData) {
                         return const CircularProgressIndicator();
                       }
+
+                      if (snap.data!.docs.isEmpty) {
+                        return const Text("No customers found");
+                      }
+
                       return _dropdown(
                         hint: "Select Customer",
                         value: _customerId,
                         items: snap.data!.docs.map((d) {
                           final data = d.data() as Map<String, dynamic>;
-                          return DropdownMenuItem(
+                          return DropdownMenuItem<String>(
                             value: d.id,
                             child: Text(
                               "${data['name']} (${data['phone']})",
@@ -197,7 +233,6 @@ class _StockOutScreenState extends State<StockOutScreen> {
 
                   const SizedBox(height: 16),
 
-                  /// QTY FIELD
                   TextField(
                     controller: _qtyCtrl,
                     keyboardType: TextInputType.number,
@@ -219,7 +254,6 @@ class _StockOutScreenState extends State<StockOutScreen> {
 
             const SizedBox(height: 28),
 
-            // ================= SUBMIT BUTTON =================
             SizedBox(
               width: double.infinity,
               height: 54,
@@ -227,9 +261,7 @@ class _StockOutScreenState extends State<StockOutScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  const Color(0xFF37474F), // dark slate (non-red)
-                  elevation: 4,
+                  backgroundColor: const Color(0xFF37474F),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -241,7 +273,6 @@ class _StockOutScreenState extends State<StockOutScreen> {
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
-                    letterSpacing: 0.6,
                   ),
                 ),
               ),
@@ -252,7 +283,6 @@ class _StockOutScreenState extends State<StockOutScreen> {
     );
   }
 
-  // ================= DROPDOWN WIDGET (UI ONLY) =================
   Widget _dropdown({
     required String hint,
     required String? value,

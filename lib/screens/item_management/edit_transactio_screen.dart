@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class EditTransactionScreen extends StatefulWidget {
@@ -18,13 +19,22 @@ class EditTransactionScreen extends StatefulWidget {
 class _EditTransactionScreenState extends State<EditTransactionScreen> {
   late TextEditingController qtyCtrl;
 
-  final itemsRef = FirebaseFirestore.instance.collection('items');
+  final user = FirebaseAuth.instance.currentUser!;
+  late final CollectionReference itemsRef;
+
+  static const Color mainGreen = Color(0xFF0B7D3B);
 
   @override
   void initState() {
     super.initState();
+
     qtyCtrl =
         TextEditingController(text: widget.txDoc['qty'].toString());
+
+    itemsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('items');
   }
 
   /// 🔴 LOGIC SAME – NOT TOUCHED
@@ -68,123 +78,137 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF4F6F4),
+      backgroundColor: const Color(0xFFF4F6F4),
 
-      // ---------------- APP BAR ----------------
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: AppBar(
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          centerTitle: true, // 👈 ADD THIS
-          backgroundColor: Colors.transparent,
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF388E3C), // green shade700
-                  Color(0xFF2E7D32), // green shade800
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
-              ),
-            ),
-          ),
-          title: const Text(
-            "Edit",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.3,
-              color: Colors.white,
-            ),
+      // ================= APP BAR (SOLID GREEN) =================
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: mainGreen,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Edit Transaction",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
         ),
       ),
 
-      // ---------------- BODY ----------------
+      // ================= BODY =================
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            /// ITEM NAME (READ ONLY LOOK)
-            const Text(
-              "Item name",
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 6),
+            // ---------- ITEM CARD ----------
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 14),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade400),
                 color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Text(
-                widget.txDoc['itemName'] ?? "Item",
-                style: const TextStyle(fontSize: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Item Name",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.txDoc['itemName'] ?? "Item",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 24),
 
-            /// QUANTITY TITLE
-            Text(
-              "Quantity (${widget.txDoc['qty']})",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            /// QUANTITY CONTROLLER
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _qtyButton(Icons.remove, _decQty),
-                Container(
-                  width: 70,
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: Colors.green.shade700, width: 2),
+            // ---------- QTY CARD ----------
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Text(
-                    qtyCtrl.text,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    "Quantity",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                _qtyButton(Icons.add, _incQty),
-              ],
+                  const SizedBox(height: 16),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _qtyButton(Icons.remove, _decQty),
+                      Container(
+                        width: 80,
+                        margin:
+                        const EdgeInsets.symmetric(horizontal: 16),
+                        padding:
+                        const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: mainGreen, width: 2),
+                        ),
+                        child: Text(
+                          qtyCtrl.text,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      _qtyButton(Icons.add, _incQty),
+                    ],
+                  ),
+                ],
+              ),
             ),
 
             const Spacer(),
 
-            /// SAVE BUTTON
+            // ---------- SAVE BUTTON ----------
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
+                  backgroundColor: const Color(0xFF37474F),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -194,29 +218,30 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                   "Save Changes",
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
-
+  
   Widget _qtyButton(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: 50,
-        height: 50,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: Colors.green.shade700,
+          color: mainGreen,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: Colors.white, size: 26),
+        child: Icon(icon, color: Colors.white, size: 24),
       ),
     );
   }

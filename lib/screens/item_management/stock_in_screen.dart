@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class StockInScreen extends StatefulWidget {
@@ -9,19 +10,39 @@ class StockInScreen extends StatefulWidget {
 }
 
 class _StockInScreenState extends State<StockInScreen> {
-  final CollectionReference itemsRef =
-  FirebaseFirestore.instance.collection('items');
-  final CollectionReference txRef =
-  FirebaseFirestore.instance.collection('stock_transactions');
+  final user = FirebaseAuth.instance.currentUser!;
+
+  late final CollectionReference itemsRef;
+  late final CollectionReference txRef;
 
   String? _selectedId;
   String? _selectedName;
-  final TextEditingController _qtyCtrl = TextEditingController(text: '1');
+
+  final TextEditingController _qtyCtrl =
+  TextEditingController(text: '1');
+
   bool _isLoading = false;
 
   String? lastItemName;
   int? lastQty;
   String? lastTime;
+
+  @override
+  void initState() {
+    super.initState();
+
+    /// ✅ SAME AS HOME SCREEN
+    itemsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('items');
+
+    /// ✅ USER-WISE TRANSACTIONS
+    txRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('stock_transactions');
+  }
 
   Future<void> _submit() async {
     if (_selectedId == null) {
@@ -41,23 +62,24 @@ class _StockInScreenState extends State<StockInScreen> {
 
     final now = DateTime.now();
     final formattedTime =
-        "${now.day}/${now.month}/${now.year}  ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
-
-    final tx = {
-      'itemId': _selectedId,
-      'itemName': _selectedName ?? '',
-      'type': 'in',
-      'qty': qty,
-      'timestamp': FieldValue.serverTimestamp(),
-    };
+        "${now.day}/${now.month}/${now.year}  "
+        "${now.hour}:${now.minute.toString().padLeft(2, '0')}";
 
     try {
+      /// 🔼 UPDATE STOCK
       await itemsRef.doc(_selectedId).update({
         'stock': FieldValue.increment(qty),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      await txRef.add(tx);
+      /// 🧾 SAVE TRANSACTION
+      await txRef.add({
+        'itemId': _selectedId,
+        'itemName': _selectedName ?? '',
+        'type': 'in',
+        'qty': qty,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
 
       setState(() {
         lastItemName = _selectedName;
@@ -65,11 +87,13 @@ class _StockInScreenState extends State<StockInScreen> {
         lastTime = formattedTime;
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Stock added')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Stock added')),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -78,7 +102,7 @@ class _StockInScreenState extends State<StockInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ================= APP BAR (UNCHANGED) =================
+      // ================= APP BAR =================
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: AppBar(
@@ -117,13 +141,11 @@ class _StockInScreenState extends State<StockInScreen> {
           ),
         ),
       ),
-      // ======================================================
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ================= FORM CARD =================
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -139,7 +161,7 @@ class _StockInScreenState extends State<StockInScreen> {
               ),
               child: Column(
                 children: [
-                  // ---------- ITEM DROPDOWN ----------
+                  /// ITEM DROPDOWN (USER-WISE)
                   StreamBuilder<QuerySnapshot>(
                     stream: itemsRef.orderBy('name').snapshots(),
                     builder: (context, snap) {
@@ -148,6 +170,10 @@ class _StockInScreenState extends State<StockInScreen> {
                       }
 
                       final docs = snap.data!.docs;
+
+                      if (docs.isEmpty) {
+                        return const Text("No items available");
+                      }
 
                       return Container(
                         padding: const EdgeInsets.symmetric(
@@ -162,10 +188,13 @@ class _StockInScreenState extends State<StockInScreen> {
                             hint: const Text("Select Item"),
                             isExpanded: true,
                             items: docs.map((d) {
-                              final data = d.data() as Map<String, dynamic>;
-                              return DropdownMenuItem(
+                              final data =
+                              d.data() as Map<String, dynamic>;
+                              return DropdownMenuItem<String>(
                                 value: d.id,
-                                child: Text(data['name']),
+                                child: Text(
+                                  "${data['name']} (Stock ${data['stock'] ?? 0})",
+                                ),
                               );
                             }).toList(),
                             onChanged: (v) {
@@ -186,7 +215,7 @@ class _StockInScreenState extends State<StockInScreen> {
 
                   const SizedBox(height: 18),
 
-                  // ---------- QTY FIELD ----------
+                  /// QTY FIELD
                   TextField(
                     controller: _qtyCtrl,
                     keyboardType: TextInputType.number,
@@ -208,7 +237,6 @@ class _StockInScreenState extends State<StockInScreen> {
 
             const SizedBox(height: 28),
 
-            // ================= SUBMIT BUTTON =================
             SizedBox(
               width: double.infinity,
               height: 54,
@@ -216,8 +244,7 @@ class _StockInScreenState extends State<StockInScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  const Color(0xFF263238), // charcoal (non-green)
+                  backgroundColor: const Color(0xFF263238),
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -230,7 +257,6 @@ class _StockInScreenState extends State<StockInScreen> {
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
-                    letterSpacing: 0.6,
                   ),
                 ),
               ),

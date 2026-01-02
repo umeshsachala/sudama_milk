@@ -188,7 +188,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         title: Text(widget.itemName),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.green,
+        backgroundColor: const Color(0xFF0B7D3B),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
